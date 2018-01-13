@@ -7,8 +7,15 @@
   "author": "Tomasz Sterna <smoku@xiaoka.com>",
   "license": "MIT",
   "devDependencies": {
-    "babel-plugin-transform-flow-strip-types": "*",
-    "parcel-bundler": "*"
+    "babel-plugin-transform-flow-strip-types": "^6.0.0",
+    "eslint": "^4.0.0",
+    "eslint-config-airbnb-base": "^12.0.0",
+    "eslint-config-standard": "^11.0.0-beta.0",
+    "eslint-plugin-import": "^2.0.0",
+    "eslint-plugin-promise": "^3.0.0",
+    "eslint-plugin-standard": "^3.0.0",
+    "eslint-plugin-unicorn": "^3.0.0",
+    "parcel-bundler": "^1.0.0"
   },
   "scripts": {
     "start": "git_build_sha=$(git rev-parse --short HEAD) parcel kernel/index.html",
