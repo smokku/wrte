@@ -10,7 +10,7 @@
     "parcel-bundler": "*"
   },
   "scripts": {
-    "start": "parcel",
-    "build": "parcel build --no-minify"
+    "start": "git_build_sha=$(git rev-parse --short HEAD) parcel kernel/index.html",
+    "build": "parcel build --no-minify kernel/index.html"
   }
 }
