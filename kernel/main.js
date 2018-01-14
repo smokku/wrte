@@ -1,10 +1,9 @@
-import Sandbox from './sandbox'
+import { spawn, ps } from './proc'
 
 export default function main () {
-  window.addEventListener('message', (evt) => {
-    console.log('MAIN', evt)
-  })
-
-  const logger = new Sandbox('http://localhost:8080/current/cmd/logger.js')
-  setTimeout(() => logger.postMessage('testing 1 2 3'), 3000)
+  const logger = spawn('http://localhost:8080/current/cmd/logger.js')
+  setTimeout(() => {
+    console.log('ps', JSON.stringify(ps()))
+    // logger.postMessage('testing 1 2 3')
+  }, 1000)
 }
