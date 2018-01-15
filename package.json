@@ -1,5 +1,5 @@
 {
-  "name": "wrte",
+  "name": "WRTE",
   "version": "0.0.1",
   "description": "Web RunTime Environment",
   "main": "kernel/main.js",
