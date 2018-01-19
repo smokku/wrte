@@ -1,7 +1,26 @@
 {
-  "plugins": ["unicorn"],
-  "extends": ["airbnb-base", "standard", "plugin:unicorn/recommended", "plugin:import/recommended"],
+  "env": {
+    "browser": true,
+    "jest": true
+  },
+  "plugins": ["unicorn", "jest"],
+  "extends": [
+    "airbnb-base",
+    "standard",
+    "plugin:unicorn/recommended",
+    "plugin:import/recommended",
+    "plugin:jest/recommended"
+  ],
   "rules": {
+    "comma-dangle": [
+      "error",
+      {
+        "arrays": "always-multiline",
+        "objects": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline"
+      }
+    ],
     "import/unambiguous": 0
   }
 }
