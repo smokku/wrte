@@ -1,14 +1,47 @@
 import { getProcessForWindow } from './proc'
+import { init as consoleInit, handler as consoleHandler } from './console'
 
 const handlers = Object.create(null)
 const assigns = Object.create(null)
 
+const internal = {
+  console: consoleHandler,
+}
+const inits = [consoleInit]
+
+export function handleMessage (handler, path, from, msg, channel) {
+  // process in next "tick", to make it similar to process handler type
+  // and break deep/cyclic stack trace
+  // eslint-disable-next-line func-names, no-shadow
+  setTimeout(() => handler.handler(path, from, msg, channel), 0)
+}
+
+function internalHandler (path, from, msg, channel) {
+  // console.debug('[internal:]', this.volume, this.args, path, from.pid, msg, channel)
+  const parts = path.split('/')
+  const int = parts.shift()
+  const handler = int && internal[int]
+
+  if (typeof handler !== 'function') {
+    from.postMessage({
+      type: 'ERROR',
+      payload: {
+        type: 'ENOENT',
+        path: [handler.volume, path].join(':'),
+      },
+    })
+    return
+  }
+
+  handler.call(handler, parts.join('/'), from, msg, channel)
+}
+
 export default function init () {
   window.console.log('Initializing VFS')
 
-  mount('internal', (msg) => {
-    console.debug('[internal:]', msg)
-  })
+  inits.forEach(i => i())
+
+  mount('internal', internalHandler)
 
   window.addEventListener('message', (evt) => {
     if (evt.isTrusted && evt.origin === 'null' && typeof evt.data.path === 'string') {
@@ -29,7 +62,19 @@ export default function init () {
           return
         }
 
-        handler.handler(handler, data)
+        if (data.type === 'OPEN') {
+          const fromChan = from.openChannel()
+          fromChan.handler = handler
+          fromChan.path = path
+          from.postMessage({
+            type: 'CHANNEL',
+            path: data.path,
+            channel: fromChan.id,
+          })
+          return
+        }
+
+        handleMessage(handler, path, from, data, null)
       }
     }
   })
@@ -143,7 +188,7 @@ export function resolveAssigns (path) {
     for (const ass in unmatched) {
       if (path.startsWith(ass)) {
         // eslint-disable-next-line no-param-reassign
-        path = normalizePath(`${unmatched[ass]}/${normalizePath(path.slice(ass.length))}`)
+        path = normalizePath([unmatched[ass], normalizePath(path.slice(ass.length))].join('/'))
         delete unmatched[ass]
         matched = true
         break

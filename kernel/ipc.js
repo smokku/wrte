@@ -1,4 +1,5 @@
 import { getProcess, getProcessForWindow } from './proc'
+import { handleMessage } from './vfs'
 
 export default function init () {
   window.console.log('Initializing IPC')
@@ -9,7 +10,7 @@ export default function init () {
       evt.origin === 'null' &&
       (typeof evt.data.process === 'string' || typeof evt.data.channel === 'string')
     ) {
-      console.log('IPC', evt)
+      // console.log('IPC', evt)
       const { source, data } = evt
       const from = getProcessForWindow(source)
 
@@ -49,33 +50,40 @@ export default function init () {
 
         if (channel) {
           const fromChan = from.getChannel(channel)
-          if (fromChan && fromChan.endpoint && fromChan.pid) {
-            const destProcess = getProcess(fromChan.pid)
-
-            if (data.type === 'CLOSE') {
-              if (destProcess) {
-                destProcess.closeChannel(fromChan.endpoint)
-              }
-              from.closeChannel(fromChan.id)
-              from.postMessage({
-                type: 'CHANNEL',
-                process: null,
-                channel: fromChan.id,
-              })
-              if (destProcess) {
-                destProcess.postMessage({
-                  type: 'CHANNEL',
-                  process: null,
-                  channel: fromChan.endpoint,
-                })
-              }
+          if (fromChan) {
+            if (fromChan.handler && fromChan.path) {
+              handleMessage(fromChan.handler, fromChan.path, from, msg, fromChan)
+              return
             }
 
-            if (destProcess) {
-              const destChan = destProcess.getChannel(fromChan.endpoint)
-              if (destChan.pid === from.pid && destChan.endpoint === fromChan.id) {
-                dest = destProcess
-                msg.channel = destChan.id
+            if (fromChan.endpoint && fromChan.pid) {
+              const destProcess = getProcess(fromChan.pid)
+
+              if (data.type === 'CLOSE') {
+                if (destProcess) {
+                  destProcess.closeChannel(fromChan.endpoint)
+                }
+                from.closeChannel(fromChan.id)
+                from.postMessage({
+                  type: 'CHANNEL',
+                  process: null,
+                  channel: fromChan.id,
+                })
+                if (destProcess) {
+                  destProcess.postMessage({
+                    type: 'CHANNEL',
+                    process: null,
+                    channel: fromChan.endpoint,
+                  })
+                }
+              }
+
+              if (destProcess) {
+                const destChan = destProcess.getChannel(fromChan.endpoint)
+                if (destChan.pid === from.pid && destChan.endpoint === fromChan.id) {
+                  dest = destProcess
+                  msg.channel = destChan.id
+                }
               }
             }
           }
@@ -83,6 +91,15 @@ export default function init () {
 
         if (dest) {
           dest.postMessage(msg)
+        } else {
+          from.postMessage({
+            type: 'ERROR',
+            payload: {
+              type: 'ESRCH',
+              process,
+              channel,
+            },
+          })
         }
       }
     }
