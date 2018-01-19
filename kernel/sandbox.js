@@ -1,7 +1,7 @@
 /* eslint-disable func-names, no-multi-assign */
 export default class Sandbox {
-  constructor (id, url) {
-    this.url = url
+  constructor (id, path) {
+    this.path = path
 
     const iframe = (this.iframe = document.createElement('iframe'))
     iframe.id = id
@@ -9,20 +9,55 @@ export default class Sandbox {
     iframe.style.display = 'none'
 
     // eslint-disable-next-line no-shadow
-    iframe.srcdoc = `<script>(${function (origin, name, url) {
-      const blob = new window.Blob([`self.importScripts('${url}')`], {
-        type: 'application/javascript',
-      })
-      const worker = new window.Worker(window.URL.createObjectURL(blob), { name })
-      worker.onerror = err => window.console.error(err)
-      worker.onmessage = (evt) => {
-        if (typeof evt === 'object') window.parent.postMessage(evt.data, origin)
+    iframe.srcdoc = `<script>(${function (origin, name, path) {
+      window.msgQueue = []
+      window.onmessage = (msg) => {
+        if (msg.isTrusted && msg.origin === origin && typeof msg.data === 'object') {
+          const { data } = msg
+          if (data.type === 'DATA' && data.path === path) {
+            const blob = new window.Blob([data.payload], {
+              type: 'application/javascript',
+            })
+            const worker = new window.Worker(window.URL.createObjectURL(blob), { name })
+            worker.onerror = err => window.console.error(err)
+            worker.onmessage = (evt) => {
+              if (evt.isTrusted && typeof evt === 'object') {
+                window.parent.postMessage(evt.data, origin)
+              }
+            }
+            window.onmessage = (evt) => {
+              if (evt.isTrusted && evt.origin === origin && typeof evt.data === 'object') {
+                if (window.msgQueue) {
+                  if (evt.data.type === 'INIT') {
+                    const { msgQueue } = window
+                    delete window.msgQueue
+                    worker.postMessage(evt.data)
+                    msgQueue.forEach(window.onmessage)
+                  } else {
+                    window.msgQueue.push(evt)
+                  }
+                } else {
+                  worker.postMessage(evt.data)
+                }
+              }
+            }
+            window.parent.postMessage('CREATED', origin)
+          } else if (
+            data.type === 'ERROR' &&
+            typeof data.payload === 'object' &&
+            data.payload.path === path
+          ) {
+            throw new Error(`Failed loading ${path}: ${data.payload.type}`)
+          } else {
+            window.msgQueue.push(msg)
+          }
+        }
       }
-      window.onmessage = (evt) => {
-        if (evt.origin === origin) worker.postMessage(evt.data)
+      window.onerror = () => {
+        window.parent.postMessage('TERMINATE', origin)
       }
-      window.parent.postMessage('CREATED', origin)
-    }.toString()})('${window.location.origin}', '${id}', '${url}')</script>`
+      window.parent.postMessage({ type: 'READ', path }, origin)
+    }.toString()})('${window.location.origin}', '${id}', '${path}')</script>`
 
     document.body.appendChild(iframe)
     this.window = iframe.contentWindow

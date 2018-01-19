@@ -22,6 +22,10 @@ export default function init () {
             })
             proc.status = 'RUNNING'
             break
+          case 'TERMINATE':
+            proc.status = 'TERMINATING'
+            proc.terminate()
+            break
           default:
           // drop
         }
@@ -40,6 +44,12 @@ export class Process {
     this.status = 'SPAWNING'
     this.sandbox = new Sandbox(pid, path)
     this.channels = Object.create(null)
+  }
+
+  terminate () {
+    this.sandbox.terminate()
+    if (this.onTerminate) this.onTerminate(this.pid)
+    this.status = 'TERMINATED'
   }
 
   postMessage (msg) {
@@ -71,13 +81,30 @@ export function getProcessForWindow (window) {
 }
 
 export function spawn (path, argv = []) {
-  console.debug(`Spawning ${path}`)
+  console.debug(`Spawning ${path} ${JSON.stringify(sanitizeArgv(argv))}`)
 
   let pid = id()
   while (Object.prototype.hasOwnProperty.call(processes, pid)) pid = id()
 
   processes[pid] = new Process(pid, path.toString(), [].concat(argv))
+  // eslint-disable-next-line no-shadow
+  processes[pid].onTerminate = (pid) => {
+    delete processes[pid]
+  }
   return pid
+}
+
+function sanitizeArgv (argv) {
+  return argv.map((arg) => {
+    switch (typeof arg) {
+      case 'object':
+        return `{${Object.keys(arg).join(',')}}`
+      case 'function':
+        return `${arg.displayName || arg.name || ''}()`
+      default:
+        return arg
+    }
+  })
 }
 
 export function ps () {
@@ -86,7 +113,7 @@ export function ps () {
   }) => ({
     pid,
     path,
-    argv,
+    argv: sanitizeArgv(argv),
     status,
   }))
 }

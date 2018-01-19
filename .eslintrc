@@ -21,6 +21,7 @@
         "exports": "always-multiline"
       }
     ],
-    "import/unambiguous": 0
+    "import/unambiguous": 0,
+    "no-restricted-globals": "off"
   }
 }

@@ -1,39 +1,65 @@
-import { getProcessForWindow } from './proc'
+import { spawn, getProcessForWindow, getProcess } from './proc'
 import { init as consoleInit, handler as consoleHandler } from './console'
+import webdav from './vfs/webdav'
 
 const handlers = Object.create(null)
 const assigns = Object.create(null)
 
 const internal = {
-  console: consoleHandler,
+  console: [consoleHandler, []],
+  webdav: [contentHandler, [webdav]],
 }
 const inits = [consoleInit]
+const mounts = {
+  http: ['internal:webdav', ['with-host']],
+  https: ['internal:webdav', ['with-host', 'secure']],
+}
 
 export function handleMessage (handler, path, from, msg, channel) {
-  // process in next "tick", to make it similar to process handler type
-  // and break deep/cyclic stack trace
-  // eslint-disable-next-line func-names, no-shadow
-  setTimeout(() => handler.handler(path, from, msg, channel), 0)
+  if (handler.handler) {
+    // process in next "tick", to make it similar to process handler type
+    // and break deep/cyclic stack trace
+    // eslint-disable-next-line func-names
+    setTimeout(() => handler.handler(path, from, msg, channel), 0)
+  } else if (handler.pid) {
+    const proc = getProcess(handler.pid)
+    const request = Object.assign({}, msg, {
+      handler: Object.assign({ path }, handler, channel ? { channel: channel.id } : {}),
+      process: from.pid,
+    })
+    delete request.handler.pid
+    proc.postMessage(request)
+  }
 }
 
 function internalHandler (path, from, msg, channel) {
   // console.debug('[internal:]', this.volume, this.args, path, from.pid, msg, channel)
   const parts = path.split('/')
   const int = parts.shift()
-  const handler = int && internal[int]
+  const [handler, args = []] = (int && internal[int]) || []
 
-  if (typeof handler !== 'function') {
+  if (typeof handler === 'function') {
+    handler.call({ path: [this.volume, path].join(':'), args }, parts.join('/'), from, msg, channel)
+  } else {
     from.postMessage({
       type: 'ERROR',
       payload: {
         type: 'ENOENT',
-        path: [handler.volume, path].join(':'),
+        path: msg.path,
       },
     })
-    return
   }
+}
 
-  handler.call(handler, parts.join('/'), from, msg, channel)
+export function contentHandler (path, from, msg, channel) {
+  const [handler] = this.args
+  if (msg.type === 'READ' && typeof handler === 'function') {
+    from.postMessage({
+      type: 'DATA',
+      path: [this.path, path].filter(p => p).join('/'),
+      payload: `(${this.args[0].toString()})()`,
+    })
+  }
 }
 
 export default function init () {
@@ -42,6 +68,8 @@ export default function init () {
   inits.forEach(i => i())
 
   mount('internal', internalHandler)
+
+  Object.entries(mounts).forEach(([vol, m]) => mount(vol, ...m))
 
   window.addEventListener('message', (evt) => {
     if (evt.isTrusted && evt.origin === 'null' && typeof evt.data.path === 'string') {
@@ -99,6 +127,11 @@ export function mount (volume, handler, args = []) {
         }
         break
       case 'string':
+        handlers[volume] = {
+          volume,
+          pid: spawn(handler, args),
+          args,
+        }
         break
       default:
         throw new Error('unimplemented')
