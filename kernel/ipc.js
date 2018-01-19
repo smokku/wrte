@@ -4,7 +4,11 @@ export default function init () {
   window.console.log('Initializing IPC')
 
   window.addEventListener('message', (evt) => {
-    if (evt.isTrusted && evt.origin === 'null' && (evt.data.process || evt.data.channel)) {
+    if (
+      evt.isTrusted &&
+      evt.origin === 'null' &&
+      (typeof evt.data.process === 'string' || typeof evt.data.channel === 'string')
+    ) {
       console.log('IPC', evt)
       const { source, data } = evt
       const from = getProcessForWindow(source)
@@ -32,12 +36,12 @@ export default function init () {
             dest.postMessage({
               type: 'CHANNEL',
               process: destChan.pid,
-              channel: destChan.id
+              channel: destChan.id,
             })
             from.postMessage({
               type: 'CHANNEL',
               process: fromChan.pid,
-              channel: fromChan.id
+              channel: fromChan.id,
             })
             return
           }
@@ -56,13 +60,13 @@ export default function init () {
               from.postMessage({
                 type: 'CHANNEL',
                 process: null,
-                channel: fromChan.id
+                channel: fromChan.id,
               })
               if (destProcess) {
                 destProcess.postMessage({
                   type: 'CHANNEL',
                   process: null,
-                  channel: fromChan.endpoint
+                  channel: fromChan.endpoint,
                 })
               }
             }
