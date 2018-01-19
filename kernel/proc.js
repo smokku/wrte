@@ -13,8 +13,12 @@ export default function init () {
         switch (evt.data) {
           case 'CREATED':
             proc.postMessage({
-              type: 'ARGV',
-              payload: proc.argv
+              type: 'INIT',
+              payload: {
+                path: proc.path,
+                argv: proc.argv,
+                channels: Object.keys(proc.channels),
+              },
             })
             proc.status = 'RUNNING'
             break
@@ -29,11 +33,12 @@ export default function init () {
 const processes = Object.create(null)
 
 export class Process {
-  constructor (pid, argv) {
+  constructor (pid, path, argv) {
     this.pid = pid
+    this.path = path
     this.argv = argv
     this.status = 'SPAWNING'
-    this.sandbox = new Sandbox(pid, argv[0])
+    this.sandbox = new Sandbox(pid, path)
     this.channels = Object.create(null)
   }
 
@@ -71,14 +76,17 @@ export function spawn (path, argv = []) {
   let pid = id()
   while (Object.prototype.hasOwnProperty.call(processes, pid)) pid = id()
 
-  processes[pid] = new Process(pid, [path.toString()].concat(argv))
+  processes[pid] = new Process(pid, path.toString(), [].concat(argv))
   return pid
 }
 
 export function ps () {
-  return Object.values(processes).map(({ pid, argv, status }) => ({
+  return Object.values(processes).map(({
+    pid, path, argv, status,
+  }) => ({
     pid,
+    path,
     argv,
-    status
+    status,
   }))
 }

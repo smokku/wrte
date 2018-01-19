@@ -11,12 +11,12 @@ export default class Sandbox {
     // eslint-disable-next-line no-shadow
     iframe.srcdoc = `<script>(${function (origin, name, url) {
       const blob = new window.Blob([`self.importScripts('${url}')`], {
-        type: 'application/javascript'
+        type: 'application/javascript',
       })
       const worker = new window.Worker(window.URL.createObjectURL(blob), { name })
       worker.onerror = err => window.console.error(err)
       worker.onmessage = (evt) => {
-        window.parent.postMessage(evt.data, origin)
+        if (typeof evt === 'object') window.parent.postMessage(evt.data, origin)
       }
       window.onmessage = (evt) => {
         if (evt.origin === origin) worker.postMessage(evt.data)
