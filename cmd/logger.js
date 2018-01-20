@@ -2,7 +2,6 @@ let init = null
 const channels = {}
 
 const CONSOLE = 'con:'
-const WEBDAV = 'internal:webdav'
 
 global.console.debug('[logger] starting')
 
@@ -17,29 +16,18 @@ global.onmessage = (evt) => {
       type: 'OPEN',
       path: CONSOLE,
     })
-
-    global.postMessage({
-      type: 'OPEN',
-      path: WEBDAV,
-    })
   } else if (data.type === 'CHANNEL' && data.path) {
     channels[data.path] = data.channel
-    if (data.path === WEBDAV) {
-      global.postMessage({
-        type: 'READ',
-        channel: channels[WEBDAV],
-      })
-    }
   } else if (data.type === 'ERROR') {
     global.console.warn(`[logger] ERROR: ${JSON.stringify(data.payload)}`)
   } else {
-    const msg = JSON.stringify(data)
-    global.console.log(`[logger] ${msg}`)
+    global.console.log(`[logger] ${JSON.stringify(data.payload)}`)
+    const payload = JSON.stringify(data.payload)
     if (channels[CONSOLE]) {
       global.postMessage({
         channel: channels[CONSOLE],
         type: 'DATA',
-        payload: msg,
+        payload,
         severity: 'NORMAL',
       })
     } else {

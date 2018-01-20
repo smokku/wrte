@@ -6,7 +6,7 @@ export function init () {
 }
 
 export function handler (path, from, msg, channel) {
-  // window.console.debug('[console:]', msg.type, this.volume, this.args, path, from.pid, msg)
+  // window.console.debug('[console:]', msg.type, this.volume, this.argv, path, from.pid, msg)
   if (msg.type === 'DATA' && typeof msg.payload === 'string') {
     root.innerText += `${msg.payload}\n`
   }

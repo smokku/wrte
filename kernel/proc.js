@@ -1,6 +1,8 @@
 import Sandbox from './sandbox'
 import id from '../lib/id'
 
+const processes = Object.create(null)
+
 export default function init () {
   window.console.log('Initializing PROC')
 
@@ -34,8 +36,6 @@ export default function init () {
   })
 }
 
-const processes = Object.create(null)
-
 export class Process {
   constructor (pid, path, argv) {
     this.pid = pid
@@ -49,6 +49,7 @@ export class Process {
   terminate () {
     this.sandbox.terminate()
     if (this.onTerminate) this.onTerminate(this.pid)
+    // FIXME: what about other ends of this.channels?
     this.status = 'TERMINATED'
   }
 
@@ -81,7 +82,7 @@ export function getProcessForWindow (window) {
 }
 
 export function spawn (path, argv = []) {
-  console.debug(`Spawning ${path} ${JSON.stringify(sanitizeArgv(argv))}`)
+  window.console.debug(`Spawning ${path} ${JSON.stringify(sanitizeArgv(argv))}`)
 
   let pid = id()
   while (Object.prototype.hasOwnProperty.call(processes, pid)) pid = id()
@@ -94,7 +95,7 @@ export function spawn (path, argv = []) {
   return pid
 }
 
-function sanitizeArgv (argv) {
+export function sanitizeArgv (argv) {
   return argv.map((arg) => {
     switch (typeof arg) {
       case 'object':

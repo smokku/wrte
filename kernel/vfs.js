@@ -1,4 +1,4 @@
-import { spawn, getProcessForWindow, getProcess } from './proc'
+import { spawn, getProcessForWindow, getProcess, sanitizeArgv } from './proc'
 import { init as consoleInit, handler as consoleHandler } from './console'
 import webdav from './vfs/webdav'
 
@@ -33,13 +33,13 @@ export function handleMessage (handler, path, from, msg, channel) {
 }
 
 function internalHandler (path, from, msg, channel) {
-  // console.debug('[internal:]', this.volume, this.args, path, from.pid, msg, channel)
+  // console.debug('[internal:]', this.volume, this.argv, path, from.pid, msg, channel)
   const parts = path.split('/')
   const int = parts.shift()
-  const [handler, args = []] = (int && internal[int]) || []
+  const [handler, argv = []] = (int && internal[int]) || []
 
   if (typeof handler === 'function') {
-    handler.call({ path: [this.volume, path].join(':'), args }, parts.join('/'), from, msg, channel)
+    handler.call({ argv }, parts.join('/'), from, msg, channel)
   } else {
     from.postMessage({
       type: 'ERROR',
@@ -52,12 +52,12 @@ function internalHandler (path, from, msg, channel) {
 }
 
 export function contentHandler (path, from, msg, channel) {
-  const [handler] = this.args
+  const [handler] = this.argv
   if (msg.type === 'READ' && typeof handler === 'function') {
     from.postMessage({
       type: 'DATA',
-      path: [this.path, path].filter(p => p).join('/'),
-      payload: `(${this.args[0].toString()})()`,
+      payload: `(${this.argv[0].toString()})()`,
+      id: msg.id,
     })
   }
 }
@@ -83,7 +83,7 @@ export default function init () {
           from.postMessage({
             type: 'ERROR',
             payload: {
-              type: 'ENXIO',
+              type: 'ENODEV',
               path: data.path,
             },
           })
@@ -112,25 +112,28 @@ function checkVolumeName (volume) {
   return typeof volume === 'string' && volume.match(/^[a-z0-9]+$/)
 }
 
-export function mount (volume, handler, args = []) {
+export function mount (volume, handler, argv = []) {
   if (checkVolumeName(volume)) {
     if (handlers[volume]) {
       throw new Error(`${volume} is already mounted`)
     }
 
+    window.console.debug(`Mounting ${volume}: ${
+      typeof handler === 'string' ? handler : typeof handler
+    } ${JSON.stringify(sanitizeArgv(argv))}`)
     switch (typeof handler) {
       case 'function':
         handlers[volume] = {
           volume,
           handler,
-          args,
+          argv,
         }
         break
       case 'string':
         handlers[volume] = {
           volume,
-          pid: spawn(handler, args),
-          args,
+          pid: spawn(handler, argv),
+          argv,
         }
         break
       default:
@@ -147,12 +150,12 @@ export function unmount (volume) {
 
 export function getMounts () {
   return Object.keys(handlers).map(({
-    volume, handler, pid, args,
+    volume, handler, pid, argv,
   }) => ({
     volume,
     handler: typeof handler,
     pid,
-    args: [].concat(args),
+    argv: [].concat(argv),
   }))
 }
 
@@ -162,7 +165,12 @@ export function assign (source, dest) {
   if (sourceParts.length === 2 && destParts.length === 2) {
     sourceParts[1] = normalizePath(sourceParts[1])
     destParts[1] = normalizePath(destParts[1])
-    assigns[sourceParts.join(':')] = destParts.join(':')
+    /* eslint-disable no-param-reassign */
+    source = sourceParts.join(':')
+    dest = destParts.join(':')
+    /* eslint-enable no-param-reassign */
+    window.console.debug(`Assigning ${source} ${dest}`)
+    assigns[source] = dest
     return true
   }
   return false

@@ -3,9 +3,12 @@ import ipcInit from './ipc'
 import vfsInit, { assign } from './vfs'
 
 export default function main () {
+  const start = window.performance.now()
   procInit()
   ipcInit()
   vfsInit()
+
+  window.console.log(`Done in ${window.performance.now() - start}ms.`)
 
   assign('con:foo/..', 'internal:cons/../console/')
 
@@ -14,8 +17,8 @@ export default function main () {
     console.log('ps', JSON.stringify(ps()))
     const loggerProc = getProcess(logger)
     if (loggerProc) {
-      loggerProc.postMessage('testing 1 2 3')
-      loggerProc.postMessage('testing 4 5 6')
+      loggerProc.postMessage({ payload: 'testing 1 2 3' })
+      loggerProc.postMessage({ payload: 'testing 4 5 6' })
     }
   }, 1000)
 }

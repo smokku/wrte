@@ -14,12 +14,12 @@ export default class Sandbox {
       window.onmessage = (msg) => {
         if (msg.isTrusted && msg.origin === origin && typeof msg.data === 'object') {
           const { data } = msg
-          if (data.type === 'DATA' && data.path === path) {
+          if (data.type === 'DATA' && data.id === 'source') {
             const blob = new window.Blob([data.payload], {
               type: 'application/javascript',
             })
             const worker = new window.Worker(window.URL.createObjectURL(blob), { name })
-            worker.onerror = err => window.console.error(err)
+            worker.onerror = window.onerror
             worker.onmessage = (evt) => {
               if (evt.isTrusted && typeof evt === 'object') {
                 window.parent.postMessage(evt.data, origin)
@@ -53,10 +53,11 @@ export default class Sandbox {
           }
         }
       }
-      window.onerror = () => {
+      window.onerror = (err) => {
+        window.console.error(err)
         window.parent.postMessage('TERMINATE', origin)
       }
-      window.parent.postMessage({ type: 'READ', path }, origin)
+      window.parent.postMessage({ type: 'READ', path, id: 'source' }, origin)
     }.toString()})('${window.location.origin}', '${id}', '${path}')</script>`
 
     document.body.appendChild(iframe)
