@@ -1,5 +1,7 @@
 # Web Run-Time Environment
 
+![CircleCI status](https://circleci.com/gh/smokku/wrte.svg?style=shield&circle-token=:circle-token)
+
 WRTE is a microkernel-like environment to run untrusted applications in your browser.
 
 ## Kernel
