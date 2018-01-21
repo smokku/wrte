@@ -8,7 +8,7 @@ export default function main () {
   ipcInit()
   vfsInit()
 
-  window.console.log(`Done in ${window.performance.now() - start}ms.`)
+  global.console.log(`Done in ${window.performance.now() - start}ms.`)
 
   assign('con:foo/..', 'internal:cons/../console/')
   assign('win:', 'internal:window')

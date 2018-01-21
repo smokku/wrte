@@ -64,11 +64,11 @@ class Window {
 
 export function init () {
   root = document.body
-  window.console.debug('[window:]', 'Obtained BODY reference')
+  global.console.log('[window:]', 'Obtained BODY reference')
 }
 
 export function handler (path, from, msg, channel) {
-  // window.console.debug('[window:]', msg.type, this.argv, path, from.pid, msg, channel)
+  // global.console.log('[window:]', msg.type, this.argv, path, from.pid, msg, channel)
   const { type, payload } = msg
   const { position } = payload || {}
   let { window: win } = channel
