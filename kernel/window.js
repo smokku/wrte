@@ -3,15 +3,17 @@ let root
 /* eslint-disable no-underscore-dangle */
 class Window {
   constructor () {
-    this._el = document.createElement('div')
-    this._el.className = 'window'
-    this._el.style.position = 'absolute'
+    this._frame = document.createElement('iframe')
+    this._frame.seamless = true
+    this._frame.sandbox = 'allow-same-origin'
+    this._frame.className = 'window'
+    this._frame.style.position = 'absolute'
 
-    this._el.style.resize = 'both'
-    this._el.style.overflow = 'auto'
-    this._el.draggable = true
-    this._el.ondragstart = this.dragStart.bind(this)
-    this._el.ondragend = this.dragEnd.bind(this)
+    this._frame.style.resize = 'both'
+    this._frame.style.overflow = 'auto'
+    this._frame.draggable = true
+    this._frame.ondragstart = this.dragStart.bind(this)
+    this._frame.ondragend = this.dragEnd.bind(this)
 
     this.setPosition({
       x: 0,
@@ -22,14 +24,14 @@ class Window {
   }
 
   show (parent = root) {
-    if (this._el.parent !== parent) {
-      parent.appendChild(this._el)
+    if (this._frame.parent !== parent) {
+      parent.appendChild(this._frame)
     }
   }
 
   hide () {
-    if (this._el.parent) {
-      this._el.parent.removeChild(this._el)
+    if (this._frame.parent) {
+      this._frame.parent.removeChild(this._frame)
     }
   }
 
@@ -38,10 +40,10 @@ class Window {
   }
 
   setPosition (position) {
-    if (position.x) this._el.style.left = `${position.x}px`
-    if (position.y) this._el.style.top = `${position.y}px`
-    if (position.width) this._el.style.width = `${position.width}px`
-    if (position.height) this._el.style.height = `${position.height}px`
+    if (position.x) this._frame.style.left = `${position.x}px`
+    if (position.y) this._frame.style.top = `${position.y}px`
+    if (position.width) this._frame.style.width = `${position.width}px`
+    if (position.height) this._frame.style.height = `${position.height}px`
   }
 
   dragStart (evt) {
@@ -52,8 +54,8 @@ class Window {
     if (this._dragStartEvent) {
       const dx = evt.x - this._dragStartEvent.x
       const dy = evt.y - this._dragStartEvent.y
-      this._el.style.left = `${parseInt(this._el.style.left, 10) + dx}px`
-      this._el.style.top = `${parseInt(this._el.style.top, 10) + dy}px`
+      this._frame.style.left = `${parseInt(this._frame.style.left, 10) + dx}px`
+      this._frame.style.top = `${parseInt(this._frame.style.top, 10) + dy}px`
       delete this._dragStartEvent
     }
   }
