@@ -1,12 +1,19 @@
 let root
 
 export function init () {
-  root = document.body
-  window.console.debug('[console:]', 'Obtained BODY reference')
+  root = document.createElement('div')
+  root.id = 'console'
+  root.style.position = 'absolute'
+  root.style.left = '0'
+  root.style.right = '0'
+  root.style.top = '0'
+  root.style.bottom = '0'
+  document.body.appendChild(root)
+  window.console.debug('[console:]', 'Created root window')
 }
 
 export function handler (path, from, msg, channel) {
-  // window.console.debug('[console:]', msg.type, this.volume, this.argv, path, from.pid, msg)
+  // window.console.debug('[console:]', msg.type, this.argv, path, from.pid, msg)
   if (msg.type === 'DATA' && typeof msg.payload === 'string') {
     root.innerText += `${msg.payload}\n`
   }

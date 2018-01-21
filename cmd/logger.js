@@ -2,6 +2,7 @@ let init = null
 const channels = {}
 
 const CONSOLE = 'con:'
+const WINDOW = 'win:'
 
 global.console.debug('[logger] starting')
 
@@ -15,6 +16,18 @@ global.onmessage = (evt) => {
     global.postMessage({
       type: 'OPEN',
       path: CONSOLE,
+    })
+    global.postMessage({
+      type: 'OPEN',
+      path: WINDOW,
+      payload: {
+        position: {
+          x: 20,
+          y: 10,
+          width: 200,
+          height: 100,
+        },
+      },
     })
   } else if (data.type === 'CHANNEL' && data.path) {
     channels[data.path] = data.channel
