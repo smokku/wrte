@@ -4,7 +4,7 @@ import id from '../lib/id'
 const processes = Object.create(null)
 
 export default function init () {
-  window.console.log('Initializing PROC')
+  global.console.log('Initializing PROC')
 
   window.addEventListener('message', (evt) => {
     // console.log('PROC', evt)
@@ -82,7 +82,7 @@ export function getProcessForWindow (window) {
 }
 
 export function spawn (path, argv = []) {
-  window.console.debug(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
+  console.log(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
 
   let pid = id()
   while (Object.prototype.hasOwnProperty.call(processes, pid)) pid = id()

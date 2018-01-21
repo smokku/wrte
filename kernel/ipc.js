@@ -2,7 +2,7 @@ import { getProcess, getProcessForWindow } from './proc'
 import { handleMessage } from './vfs'
 
 export default function init () {
-  window.console.log('Initializing IPC')
+  global.console.log('Initializing IPC')
 
   window.addEventListener('message', (evt) => {
     if (

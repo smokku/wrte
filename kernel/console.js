@@ -9,11 +9,11 @@ export function init () {
   root.style.top = '0'
   root.style.bottom = '0'
   document.body.appendChild(root)
-  window.console.debug('[console:]', 'Created root window')
+  global.console.log('[console:]', 'Created root window')
 }
 
 export function handler (path, from, msg, channel) {
-  // window.console.debug('[console:]', msg.type, this.argv, path, from.pid, msg)
+  // global.console.log('[console:]', msg.type, this.argv, path, from.pid, msg)
   if (msg.type === 'DATA' && typeof msg.payload === 'string') {
     root.innerText += `${msg.payload}\n`
   }
