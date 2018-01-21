@@ -1,5 +1,6 @@
 import { spawn, getProcessForWindow, getProcess, sanitizeArgv } from './proc'
 import { init as consoleInit, handler as consoleHandler } from './console'
+import { init as windowInit, handler as windowHandler } from './window'
 import webdav from './vfs/webdav'
 
 const handlers = Object.create(null)
@@ -7,9 +8,10 @@ const assigns = Object.create(null)
 
 const internal = {
   console: [consoleHandler, []],
+  window: [windowHandler, []],
   webdav: [contentHandler, [webdav]],
 }
-const inits = [consoleInit]
+const inits = [consoleInit, windowInit]
 const mounts = {
   http: ['internal:webdav', ['with-host']],
   https: ['internal:webdav', ['with-host', 'secure']],
@@ -99,6 +101,7 @@ export default function init () {
             path: data.path,
             channel: fromChan.id,
           })
+          handleMessage(handler, path, from, data, fromChan)
           return
         }
 
@@ -119,7 +122,7 @@ export function mount (volume, handler, argv = []) {
     }
 
     window.console.debug(`Mounting ${volume}: ${
-      typeof handler === 'string' ? handler : typeof handler
+      typeof handler === 'string' ? `"${handler}"` : typeof handler
     } ${JSON.stringify(sanitizeArgv(argv))}`)
     switch (typeof handler) {
       case 'function':
@@ -169,7 +172,7 @@ export function assign (source, dest) {
     source = sourceParts.join(':')
     dest = destParts.join(':')
     /* eslint-enable no-param-reassign */
-    window.console.debug(`Assigning ${source} ${dest}`)
+    window.console.debug(`Assigning ${source} "${dest}"`)
     assigns[source] = dest
     return true
   }

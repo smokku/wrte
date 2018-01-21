@@ -11,6 +11,7 @@ export default function main () {
   window.console.log(`Done in ${window.performance.now() - start}ms.`)
 
   assign('con:foo/..', 'internal:cons/../console/')
+  assign('win:', 'internal:window')
 
   const logger = spawn('http://localhost:8080/current/cmd/logger.js')
   setTimeout(() => {
