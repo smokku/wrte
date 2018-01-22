@@ -40,10 +40,10 @@ class Window {
   }
 
   setPosition (position) {
-    if (position.x) this._frame.style.left = `${position.x}px`
-    if (position.y) this._frame.style.top = `${position.y}px`
-    if (position.width) this._frame.style.width = `${position.width}px`
-    if (position.height) this._frame.style.height = `${position.height}px`
+    if (position.x != null) this._frame.style.left = `${position.x}px`
+    if (position.y != null) this._frame.style.top = `${position.y}px`
+    if (position.width != null) this._frame.style.width = `${position.width}px`
+    if (position.height != null) this._frame.style.height = `${position.height}px`
   }
 
   dragStart (evt) {
