@@ -10,7 +10,6 @@ class Window {
     this._frame.style.position = 'absolute'
 
     this._frame.style.resize = 'both'
-    this._frame.style.overflow = 'auto'
     this._frame.draggable = true
     this._frame.ondragstart = this.dragStart.bind(this)
     this._frame.ondragend = this.dragEnd.bind(this)
@@ -26,6 +25,17 @@ class Window {
   show (parent = root) {
     if (this._frame.parent !== parent) {
       parent.appendChild(this._frame)
+      this._body = this._frame.contentWindow.document.body
+      this._body.style.margin = '0'
+      this._body.style.padding = '0'
+      this._body.style.display = 'flex'
+      this._content = this._frame.contentWindow.document.createElement('textarea')
+      this._content.style.flex = '1 1 0'
+      this._content.style.resize = 'none'
+      this._content.style.overflow = 'auto'
+      this._content.style.border = 'none'
+      this._content.style.outline = 'none'
+      this._body.appendChild(this._content)
     }
   }
 
