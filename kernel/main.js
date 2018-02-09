@@ -13,7 +13,7 @@ export default function main () {
   assign('con:foo/..', 'internal:cons/../console/')
   assign('win:', 'internal:window')
 
-  const logger = spawn('http://localhost:8080/current/cmd/logger.js')
+  const logger = spawn(`${window.location.origin}/current/cmd/logger.js`)
   setTimeout(() => {
     console.log('ps', JSON.stringify(ps()))
     const loggerProc = getProcess(logger)
