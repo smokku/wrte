@@ -82,7 +82,7 @@ export function getProcessForWindow (window) {
 }
 
 export function spawn (path, argv = []) {
-  console.log(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
+  global.console.log(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
 
   let pid = id()
   while (Object.prototype.hasOwnProperty.call(processes, pid)) pid = id()

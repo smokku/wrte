@@ -9,8 +9,8 @@
   "devDependencies": {
     "babel-core": "^6.26.0",
     "babel-jest": "^22.1.0",
-    "babel-plugin-transform-flow-strip-types": "^6.22.0",
-    "babel-preset-env": "^1.6.0",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-flow": "^6.23.0",
     "eslint": "^4.15.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-config-standard": "^11.0.0-beta.0",
@@ -20,14 +20,19 @@
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.0",
     "eslint-plugin-unicorn": "^3.0.0",
+    "git-rev-sync": "^1.9.0",
     "jest": "^22.1.0",
-    "regenerator-runtime": "^0.11.0",
-    "webpack": "^3.10.0",
-    "webpack-dev-server": "^2.11.0"
+    "live-server": "^1.2.0",
+    "npm-run-all": "^4.1.2",
+    "rollup": "^0.55.0",
+    "rollup-plugin-babel": "^3.0.0",
+    "rollup-plugin-replace": "^2.0.0"
   },
   "scripts": {
     "test": "NODE_ENV=test jest",
-    "start": "git_build_sha=dev webpack-dev-server",
-    "build": "git_build_sha=$(git rev-parse --short HEAD) webpack"
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "dev": "npm-run-all --parallel start watch",
+    "start": "live-server --verbose --no-browser --cors dist/"
   }
 }

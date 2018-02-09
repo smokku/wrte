@@ -44,7 +44,7 @@ global.onmessage = (evt) => {
         severity: 'NORMAL',
       })
     } else {
-      console.warn(`[logger] no ${CONSOLE} channel`)
+      global.console.warn(`[logger] no ${CONSOLE} channel `)
     }
   }
 }
