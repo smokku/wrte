@@ -1,15 +1,15 @@
 {
   "env": {
     "browser": true,
-    "jest": true
+    "es6": true
   },
-  "plugins": ["unicorn", "jest"],
+  "plugins": ["unicorn", "ava"],
   "extends": [
     "airbnb-base",
     "standard",
     "plugin:unicorn/recommended",
     "plugin:import/recommended",
-    "plugin:jest/recommended"
+    "plugin:ava/recommended"
   ],
   "rules": {
     "comma-dangle": [
@@ -22,6 +22,7 @@
       }
     ],
     "import/unambiguous": 0,
-    "no-restricted-globals": "off"
+    "no-restricted-globals": "off",
+    "no-console": "off"
   }
 }

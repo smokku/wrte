@@ -54,7 +54,7 @@ export default class Sandbox {
         }
       }
       window.onerror = (err) => {
-        window.console.error(err)
+        console.error(err)
         window.parent.postMessage('TERMINATE', origin)
       }
       window.parent.postMessage({ type: 'READ', path, id: 'source' }, origin)
