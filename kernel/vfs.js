@@ -65,7 +65,7 @@ export function contentHandler (path, from, msg, channel) {
 }
 
 export default function init () {
-  window.console.log('Initializing VFS')
+  console.log('Initializing VFS')
 
   inits.forEach(i => i())
 
@@ -121,7 +121,7 @@ export function mount (volume, handler, argv = []) {
       throw new Error(`${volume} is already mounted`)
     }
 
-    window.console.debug(`Mounting ${volume}: ${
+    console.debug(`Mounting ${volume}: ${
       typeof handler === 'string' ? `"${handler}"` : typeof handler
     } ${JSON.stringify(sanitizeArgv(argv))}`)
     switch (typeof handler) {
@@ -172,7 +172,7 @@ export function assign (source, dest) {
     source = sourceParts.join(':')
     dest = destParts.join(':')
     /* eslint-enable no-param-reassign */
-    window.console.debug(`Assigning ${source} "${dest}"`)
+    console.debug(`Assigning ${source} "${dest}"`)
     assigns[source] = dest
     return true
   }

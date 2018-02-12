@@ -30,8 +30,8 @@ const entries = {
     name: 'wrte',
   },
   'cmd/logger.js': 'dist/current/cmd/logger.js',
-  'cmd/rc.js': 'dist/current/cmd/rc.js',
-  'cmd/cat.js': 'dist/current/cmd/cat.js',
+  // "cmd/rc.js": "dist/current/cmd/rc.js",
+  // "cmd/cat.js": "dist/current/cmd/cat.js",
 }
 
 export default Object.keys(entries).reduce(

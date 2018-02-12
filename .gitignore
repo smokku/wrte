@@ -1,5 +1,5 @@
 node_modules/
 /.cache/
 /dist/current/
-
+/.nyc_output/
 /.vscode/
