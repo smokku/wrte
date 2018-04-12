@@ -6,45 +6,54 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version you desire here
       - image: circleci/node:8-stretch-browsers
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/mongo:3.4.4
-
     working_directory: ~/repo
-
     steps:
       - checkout
-
-      # Download and cache dependencies
       - restore_cache:
+          name: Restore Yarn Package Cache
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
-      - run: yarn install
-
+            - yarn-packages-{{ .Branch }}-{{ checksum "package.json" }}
+            - yarn-packages-{{ .Branch }}
+            - yarn-packages-master
+            - yarn-packages-
+      - run:
+          name: Install Dependencies
+          command: yarn install
       - save_cache:
+          name: Save Yarn Package Cache
+          key: yarn-packages-{{ .Branch }}-{{ checksum "package.json" }}
           paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-
+            - node_modules/
       - run:
           name: Build
           command: yarn build
-
       - run:
           name: Test
           command: yarn test
-
       - run:
           name: Test code coverage
           command: yarn cov
-
       - run:
-          name: Generate code coverage report
-          command: './node_modules/.bin/nyc report --reporter=text-lcov'
+          name: Code coverage report
+          command: |
+            sudo npm install -g codeclimate-test-reporter codecov
+            ./node_modules/.bin/nyc report --reporter=text-lcov > coverage.lcov
+            codeclimate-test-reporter < coverage.lcov
+            codecov
+      - deploy:
+          name: Install AWS tool
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              sudo apt-get update && sudo apt-get install -qq -y python-pip libpython-dev
+              curl -O https://bootstrap.pypa.io/get-pip.py && sudo python get-pip.py
+              sudo pip install -q awscli --upgrade
+            fi
+      - deploy:
+          name: Deploy Master to S3
+          working_directory: ~/repo
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              aws s3 sync dist/ s3://wrte.cloud/ --delete
+            fi
