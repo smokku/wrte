@@ -1,6 +1,8 @@
 # Web Run-Time Environment
 
-[![CircleCI status](https://circleci.com/gh/smokku/wrte.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/smokku/wrte)
+[![CircleCI](https://circleci.com/gh/smokku/wrte.svg?style=shield)](https://circleci.com/gh/smokku/wrte)
+[![codebeat](https://codebeat.co/badges/e4e535d2-099d-474c-b97c-4fee3ffaaa90)](https://codebeat.co/projects/github-com-smokku-wrte-master)
+[![codecov](https://codecov.io/gh/smokku/wrte/branch/master/graph/badge.svg)](https://codecov.io/gh/smokku/wrte)
 
 WRTE is a microkernel-like environment to run untrusted applications in your browser.
 
