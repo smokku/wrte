@@ -3,26 +3,27 @@
     "browser": true,
     "es6": true
   },
-  "plugins": ["unicorn", "ava"],
+  "parser": "babel-eslint",
+  "plugins": ["flowtype", "unicorn", "ava"],
   "extends": [
-    "airbnb-base",
-    "standard",
-    "plugin:unicorn/recommended",
+    "plugin:ava/recommended",
     "plugin:import/recommended",
-    "plugin:ava/recommended"
+    "plugin:flowtype/recommended",
+    "plugin:unicorn/recommended",
+    "airbnb-base",
+    "standard"
   ],
   "rules": {
     "comma-dangle": [
       "error",
       {
+        // always-multiline helps with diffs
         "arrays": "always-multiline",
         "objects": "always-multiline",
         "imports": "always-multiline",
         "exports": "always-multiline"
       }
     ],
-    "import/unambiguous": 0,
-    "no-restricted-globals": "off",
-    "no-console": "off"
+    "no-console": "off" // temporary, until implementing proper logger to console:
   }
 }

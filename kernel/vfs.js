@@ -1,3 +1,4 @@
+// @flow
 import { spawn, getProcessForWindow, getProcess, sanitizeArgv } from './proc'
 import { init as consoleInit, handler as consoleHandler } from './console'
 import { init as windowInit, handler as windowHandler } from './window'
@@ -8,7 +9,7 @@ const assigns = Object.create(null)
 
 const internal = {
   console: [consoleHandler, []],
-  window: [windowHandler, []],
+  window: [windowHandler, [], { foo: 1, bar: 2 }],
   webdav: [contentHandler, [webdav]],
 }
 const inits = [consoleInit, windowInit]
@@ -17,7 +18,7 @@ const mounts = {
   https: ['internal:webdav', ['with-host', 'secure']],
 }
 
-export function handleMessage (handler, path, from, msg, channel) {
+export function handleMessage (handler: Object, path: string, from: Object, msg: Object, channel: ?Object) {
   if (handler.handler) {
     // process in next "tick", to make it similar to process handler type
     // and break deep/cyclic stack trace
@@ -34,7 +35,18 @@ export function handleMessage (handler, path, from, msg, channel) {
   }
 }
 
-function internalHandler (path, from, msg, channel) {
+/**
+ * Handler function for `internal:` _volume_.
+ * This is a dispatcher to `internal{}` handler functions _map_ped as subdirectories
+ * of `internal:` volume. These are usually _assign_ed as own _volume_s, i.e.
+ * `internal:console` assigned as `console:`, etc.
+ *
+ * @param {string} path - request _path_
+ * @param {object} from - requesting process _pid_
+ * @param {object} msg - _message_ object
+ * @param {object} channel - _channel_ the _message_ belongs to
+ */
+function internalHandler (path: string, from: Object, msg: Object, channel: Object) {
   // console.debug('[internal:]', this.volume, this.argv, path, from.pid, msg, channel)
   const parts = path.split('/')
   const int = parts.shift()
@@ -53,7 +65,7 @@ function internalHandler (path, from, msg, channel) {
   }
 }
 
-export function contentHandler (path, from, msg, channel) {
+export function contentHandler (path: string, from: Object, msg: Object, channel: Object) {
   const [handler] = this.argv
   if (msg.type === 'READ' && typeof handler === 'function') {
     from.postMessage({
@@ -115,7 +127,7 @@ function checkVolumeName (volume) {
   return typeof volume === 'string' && volume.match(/^[a-z0-9]+$/)
 }
 
-export function mount (volume, handler, argv = []) {
+export function mount (volume: string, handler: Function, argv: Array<string> = []) {
   if (checkVolumeName(volume)) {
     if (handlers[volume]) {
       throw new Error(`${volume} is already mounted`)
@@ -145,7 +157,7 @@ export function mount (volume, handler, argv = []) {
   }
 }
 
-export function unmount (volume) {
+export function unmount (volume: string) {
   if (checkVolumeName(volume)) {
     throw new Error('unimplemented')
   }
@@ -162,7 +174,7 @@ export function getMounts () {
   }))
 }
 
-export function assign (source, dest) {
+export function assign (source: string, dest: string) {
   const sourceParts = splitPath(source.toString())
   const destParts = splitPath(dest.toString())
   if (sourceParts.length === 2 && destParts.length === 2) {
@@ -179,7 +191,7 @@ export function assign (source, dest) {
   return false
 }
 
-export function unassign (source) {
+export function unassign (source: string) {
   delete assigns[source.toString()]
 }
 
@@ -187,12 +199,12 @@ export function getAssigns () {
   return Object.keys(assigns).map(from => [from, assigns[from]])
 }
 
-export function resolvePath (full) {
+export function resolvePath (full: string) {
   const [handler, path] = splitPath(full)
   return [(checkVolumeName(handler) && handlers[handler]) || undefined, normalizePath(path)]
 }
 
-export function splitPath (full) {
+export function splitPath (full: string) {
   const match = full.match(/^[a-z0-9]+:/)
   let volume
   let path
@@ -206,7 +218,7 @@ export function splitPath (full) {
   return [volume, path]
 }
 
-export function normalizePath (path) {
+export function normalizePath (path: string) {
   /* eslint-disable no-param-reassign */
   path = `/${path}/`
   path = path.replace(/\/+/g, '/') // compress all //
@@ -223,7 +235,7 @@ export function normalizePath (path) {
   /* eslint-enable no-param-reassign */
 }
 
-export function resolveAssigns (path) {
+export function resolveAssigns (path: string) {
   const unmatched = Object.assign(Object.create(null), assigns)
   let matched
   do {
