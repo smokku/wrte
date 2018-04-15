@@ -18,7 +18,13 @@ const mounts = {
   https: ['internal:webdav', ['with-host', 'secure']],
 }
 
-export function handleMessage (handler: Object, path: string, from: Object, msg: Object, channel: ?Object) {
+export function handleMessage (
+  handler: Object,
+  path: string,
+  from: Object,
+  msg: Object,
+  channel: ?Object
+) {
   if (handler.handler) {
     // process in next "tick", to make it similar to process handler type
     // and break deep/cyclic stack trace
@@ -41,10 +47,10 @@ export function handleMessage (handler: Object, path: string, from: Object, msg:
  * of `internal:` volume. These are usually _assign_ed as own _volume_s, i.e.
  * `internal:console` assigned as `console:`, etc.
  *
- * @param {string} path - request _path_
- * @param {object} from - requesting process _pid_
- * @param {object} msg - _message_ object
- * @param {object} channel - _channel_ the _message_ belongs to
+ * @param {*} path - Request _path_.
+ * @param {*} from - Requesting process.
+ * @param {*} msg - Request _message_.
+ * @param {*} channel - _The channel_ the _message_ belongs to.
  */
 function internalHandler (path: string, from: Object, msg: Object, channel: Object) {
   // console.debug('[internal:]', this.volume, this.argv, path, from.pid, msg, channel)
