@@ -11,7 +11,8 @@
     "plugin:flowtype/recommended",
     "plugin:unicorn/recommended",
     "airbnb-base",
-    "standard"
+    "standard",
+    "standard-jsdoc"
   ],
   "rules": {
     "comma-dangle": [
@@ -24,6 +25,18 @@
         "exports": "always-multiline"
       }
     ],
-    "no-console": "off" // temporary, until implementing proper logger to console:
+    "no-console": "off", // temporary, until implementing proper logger to console:
+    "require-jsdoc": "off",
+    "valid-jsdoc": [
+      "warn",
+      {
+        "requireReturn": false,
+        "requireReturnType": false,
+        "requireReturnDescription": false
+      }
+    ],
+    "jsdoc/require-param-type": "off",
+    "jsdoc/require-returns-type": "off",
+    "jsdoc/require-returns-description": "off"
   }
 }
