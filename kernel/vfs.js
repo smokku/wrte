@@ -28,7 +28,6 @@ export function handleMessage (
   if (handler.handler) {
     // process in next "tick", to make it similar to process handler type
     // and break deep/cyclic stack trace
-    // eslint-disable-next-line func-names
     setTimeout(() => handler.handler(path, from, msg, channel), 0)
   } else if (handler.pid) {
     const proc = getProcess(handler.pid)
@@ -43,14 +42,14 @@ export function handleMessage (
 
 /**
  * Handler function for `internal:` _volume_.
- * This is a dispatcher to `internal{}` handler functions _map_ped as subdirectories
- * of `internal:` volume. These are usually _assign_ed as own _volume_s, i.e.
+ * This is a dispatcher to `internal{}` handler functions mapped as subdirectories
+ * of `internal:` volume. These are usually <i>assign</i>ed as own <i>volume</i>s, i.e.
  * `internal:console` assigned as `console:`, etc.
  *
- * @param {*} path - Request _path_.
- * @param {*} from - Requesting process.
- * @param {*} msg - Request _message_.
- * @param {*} channel - _The channel_ the _message_ belongs to.
+ * @param path - Request _path_.
+ * @param from - Requesting process.
+ * @param msg - Request _message_.
+ * @param channel - _The channel_ the _message_ belongs to.
  */
 function internalHandler (path: string, from: Object, msg: Object, channel: Object) {
   // console.debug('[internal:]', this.volume, this.argv, path, from.pid, msg, channel)
