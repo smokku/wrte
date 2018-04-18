@@ -15,7 +15,7 @@ export default function main () {
 
   const logger = spawn(`${window.location.origin}/current/cmd/logger.js`)
   setTimeout(() => {
-    console.log('ps', JSON.stringify(ps()))
+    global.console.log('ps', JSON.stringify(ps()))
     const loggerProc = getProcess(logger)
     if (loggerProc) {
       loggerProc.postMessage({ payload: 'testing 1 2 3' })

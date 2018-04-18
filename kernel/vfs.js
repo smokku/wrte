@@ -1,4 +1,5 @@
 // @flow
+import test from '../lib/tape'
 import { spawn, getProcessForWindow, getProcess, sanitizeArgv } from './proc'
 import { init as consoleInit, handler as consoleHandler } from './console'
 import { init as windowInit, handler as windowHandler } from './window'
@@ -82,7 +83,7 @@ export function contentHandler (path: string, from: Object, msg: Object, channel
 }
 
 export default function init () {
-  console.log('Initializing VFS')
+  global.console.log('Initializing VFS')
 
   inits.forEach(i => i())
 
@@ -197,6 +198,7 @@ export function assign (source: string, dest: string) {
 }
 
 export function unassign (source: string) {
+  console.debug(`Unassigning ${source}`)
   delete assigns[source.toString()]
 }
 
@@ -258,3 +260,88 @@ export function resolveAssigns (path: string) {
   } while (matched)
   return path
 }
+
+/* eslint-disable no-shadow */
+test('normalizePath', (t) => {
+  t.test('collapse', (t) => {
+    t.equal(normalizePath('foo/bar'), 'foo/bar')
+    t.equal(normalizePath('/foo/bar/'), 'foo/bar')
+    t.equal(normalizePath('/foo/bar//'), 'foo/bar')
+    t.equal(normalizePath('/foo/bar///'), 'foo/bar')
+    t.equal(normalizePath('/foo//bar/'), 'foo/bar')
+    t.equal(normalizePath('/foo///bar/'), 'foo/bar')
+    t.equal(normalizePath('/foo///bar/baz'), 'foo/bar/baz')
+    t.equal(normalizePath('/foo/bar//baz/'), 'foo/bar/baz')
+    t.end()
+  })
+
+  t.test('keep', (t) => {
+    t.equal(normalizePath('.'), '')
+    t.equal(normalizePath('/foo/.'), 'foo')
+    t.equal(normalizePath('foo/./'), 'foo')
+    t.equal(normalizePath('/foo/./bar/./baz/'), 'foo/bar/baz')
+    t.equal(normalizePath('foo/./././bar'), 'foo/bar')
+    t.equal(normalizePath('./././foo/././.'), 'foo')
+    t.equal(normalizePath('foo.bar'), 'foo.bar')
+    t.equal(normalizePath('/.foo/'), '.foo')
+    t.equal(normalizePath('/foo./'), 'foo.')
+    t.end()
+  })
+
+  t.test('remove', (t) => {
+    t.equal(normalizePath('../bar'), 'bar')
+    t.equal(normalizePath('/../bar'), 'bar')
+    t.equal(normalizePath('bar/..'), '')
+    t.equal(normalizePath('/bar/../'), '')
+    t.equal(normalizePath('foo/../bar'), 'bar')
+    t.equal(normalizePath('foo../../bar../baz'), 'bar../baz')
+    t.equal(normalizePath('foo..bar'), 'foo..bar')
+    t.equal(normalizePath('/../foo/../bar../..baz/'), 'bar../..baz')
+    t.equal(normalizePath('/../../../foo/../bar/../baz'), 'baz')
+    t.equal(normalizePath('/foo/bar/../../baz'), 'baz')
+    t.equal(normalizePath('/foo/bar/baz/../..'), 'foo')
+    t.end()
+  })
+})
+
+test('splitPath', (t) => {
+  t.deepEqual(splitPath('foo:'), ['foo', ''])
+  t.deepEqual(splitPath('bar'), [undefined, 'bar'])
+  t.deepEqual(splitPath(':bar'), [undefined, 'bar'])
+  t.deepEqual(splitPath('::::bar/baz'), [undefined, 'bar/baz'])
+  t.deepEqual(splitPath('foo:bar/baz'), ['foo', 'bar/baz'])
+  t.deepEqual(splitPath('foo:/bar/baz/'), ['foo', '/bar/baz/'])
+  t.deepEqual(splitPath('foo:bar:baz'), ['foo', 'bar:baz'])
+  t.deepEqual(splitPath('foo/bar:baz'), [undefined, 'foo/bar:baz'])
+  t.end()
+})
+
+test('assigns', (t) => {
+  t.test('setup', (t) => {
+    assign('testcon:foo/..', 'internal:console/../console/')
+    assign('testdebugcon:', 'con:debug/restricted')
+    t.end()
+  })
+
+  t.test('getAssigns', (t) => {
+    const assigns = getAssigns()
+    t.deepEqual(assigns.find(a => a[0] === 'testcon:'), ['testcon:', 'internal:console'])
+    t.deepEqual(assigns.find(a => a[0] === 'testdebugcon:'), [
+      'testdebugcon:',
+      'con:debug/restricted',
+    ])
+    t.end()
+  })
+
+  t.test('resolveAssigns', (t) => {
+    t.equal(resolveAssigns('testcon:debug'), 'internal:console/debug')
+    t.equal(resolveAssigns('testdebugcon:../unsafe'), 'internal:console/debug/restricted/unsafe')
+    t.end()
+  })
+
+  t.test('teardown', (t) => {
+    unassign('testcon:')
+    unassign('testdebugcon:')
+    t.end()
+  })
+})

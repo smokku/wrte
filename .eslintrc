@@ -4,9 +4,9 @@
     "es6": true
   },
   "parser": "babel-eslint",
-  "plugins": ["flowtype", "unicorn", "ava"],
+  "plugins": ["flowtype", "unicorn", "tape"],
   "extends": [
-    "plugin:ava/recommended",
+    "plugin:tape/recommended",
     "plugin:import/recommended",
     "plugin:flowtype/recommended",
     "plugin:unicorn/recommended",
@@ -25,7 +25,7 @@
         "exports": "always-multiline"
       }
     ],
-    "no-console": "off", // temporary, until implementing proper logger to console:
+    "tape/no-ignored-test-files": "off", // we have tests all over the code
     "require-jsdoc": "off",
     "valid-jsdoc": [
       "warn",
