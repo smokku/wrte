@@ -27,9 +27,6 @@ jobs:
           paths:
             - node_modules/
       - run:
-          name: Build
-          command: yarn build
-      - run:
           name: Test
           command: yarn test
       - run:
@@ -42,6 +39,9 @@ jobs:
             ./node_modules/.bin/nyc report --reporter=text-lcov > coverage.lcov
             codeclimate-test-reporter < coverage.lcov
             codecov
+      - run:
+          name: Build
+          command: yarn build
       - deploy:
           name: Install AWS tool
           command: |

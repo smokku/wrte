@@ -6,21 +6,32 @@ import pkg from './package.json'
 
 // `npm run build` -> `production` is true
 // `npm run dev` -> `production` is false
-const production = !process.env.ROLLUP_WATCH
+const production = !process.env.ROLLUP_WATCH && process.env.NODE_ENV !== 'ci'
+
+const babelConfig = {
+  exclude: 'node_modules/**',
+}
+if (production) {
+  babelConfig.plugins = [
+    ['discard-module-references', { targets: ['./lib/tape', '../lib/tape', '../../lib/tape'] }],
+  ]
+}
 
 const baseConfig = {
   output: {
     format: 'iife', // immediately-invoked function expression — suitable for <script> tags
     sourcemap: !production,
+    interop: false,
   },
   plugins: [
     replace({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'process.env.npm_package_name': JSON.stringify(pkg.name),
       'process.env.npm_package_version': JSON.stringify(pkg.version),
       'process.env.git_build_sha': JSON.stringify(production ? git.short() : 'dev'),
       global: 'self',
     }),
-    babel(),
+    babel(babelConfig),
   ],
 }
 
