@@ -6,6 +6,8 @@
 
 WRTE is a microkernel-like environment to run untrusted applications in your browser.
 
+Try it live at http://wrte.cloud/
+
 ![WRTE boot sequence](https://i.imgur.com/tbC96g1.png)
 
 ## Kernel
