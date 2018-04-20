@@ -1,3 +1,5 @@
+// @flow
+import EventEmitter from './event-emitter'
 import Sandbox from './sandbox'
 import id from '../lib/id'
 
@@ -36,8 +38,11 @@ export default function init () {
   })
 }
 
-export class Process {
+const PROCESS_STATUS = Symbol('status')
+
+export class Process extends EventEmitter {
   constructor (pid, path, argv) {
+    super()
     this.pid = pid
     this.path = path
     this.argv = argv
@@ -46,10 +51,18 @@ export class Process {
     this.channels = Object.create(null)
   }
 
+  get status () {
+    return this[PROCESS_STATUS]
+  }
+
+  set status (status) {
+    this[PROCESS_STATUS] = status
+    this.emit('status', status)
+  }
+
   terminate () {
+    // FIXME: what about other ends of this.channels? we should CLOSE them
     this.sandbox.terminate()
-    if (this.onTerminate) this.onTerminate(this.pid)
-    // FIXME: what about other ends of this.channels?
     this.status = 'TERMINATED'
   }
 
@@ -59,6 +72,7 @@ export class Process {
 
   openChannel () {
     let chan = id()
+    // create unique channel id
     while (Object.prototype.hasOwnProperty.call(this.channels, chan)) chan = id()
     return (this.channels[chan] = { id: chan })
   }
@@ -81,17 +95,22 @@ export function getProcessForWindow (window) {
   return pid && getProcess(pid)
 }
 
-export function spawn (path, argv = []) {
+export function spawn (path: string, argv: Array<any> = []): string | null {
+  if (!Array.isArray(argv)) {
+    global.console.error(`Invalid argv '${typeof argv}' for ${path}`)
+    return null
+  }
   global.console.log(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
 
   let pid = id()
   while (Object.prototype.hasOwnProperty.call(processes, pid)) pid = id()
 
   processes[pid] = new Process(pid, path.toString(), [].concat(argv))
-  // eslint-disable-next-line no-shadow
-  processes[pid].onTerminate = (pid) => {
-    delete processes[pid]
-  }
+  processes[pid].on('status', (status) => {
+    if (status === 'TERMINATED') {
+      delete processes[pid]
+    }
+  })
   return pid
 }
 
