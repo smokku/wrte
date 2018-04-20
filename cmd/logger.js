@@ -1,10 +1,11 @@
 let init = null
 const channels = {}
+const queue = []
 
 const CONSOLE = 'con:'
 const WINDOW = 'win:'
 
-global.console.debug('[logger] starting')
+global.console.log('[logger] starting')
 
 global.onmessage = (evt) => {
   const { data } = evt
@@ -31,20 +32,30 @@ global.onmessage = (evt) => {
     })
   } else if (data.type === 'CHANNEL' && data.path) {
     channels[data.path] = data.channel
+    queue.forEach((payload) => {
+      logPayload(payload)
+    })
+    queue.length = 0
   } else if (data.type === 'ERROR') {
     global.console.warn(`[logger] ERROR: ${JSON.stringify(data.payload)}`)
-  } else {
+  } else if (data.payload) {
     global.console.log(`[logger] ${JSON.stringify(data.payload)}`)
     const payload = JSON.stringify(data.payload)
     if (channels[CONSOLE]) {
-      global.postMessage({
-        channel: channels[CONSOLE],
-        type: 'DATA',
-        payload,
-        severity: 'NORMAL',
-      })
+      logPayload(payload)
     } else {
-      global.console.warn(`[logger] no ${CONSOLE} channel `)
+      queue.push(payload)
     }
+  } else {
+    global.console.warn(`[logger] Unhandled message: ${JSON.stringify(data)}`)
   }
+}
+
+function logPayload (payload) {
+  global.postMessage({
+    channel: channels[CONSOLE],
+    type: 'DATA',
+    payload,
+    severity: 'NORMAL',
+  })
 }

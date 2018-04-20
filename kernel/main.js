@@ -10,16 +10,19 @@ export default function main () {
 
   global.console.log(`Done in ${window.performance.now() - start}ms.`)
 
+  // FIXME: make these assigns part of internal:autoexec
+  // FIXME: and initialize local:autoexec with `source internal:autoexec`
   assign('con:foo/..', 'internal:cons/../console/')
   assign('win:', 'internal:window')
 
-  const logger = spawn(`${window.location.origin}/current/cmd/logger.js`)
-  setTimeout(() => {
-    global.console.log('ps', JSON.stringify(ps()))
-    const loggerProc = getProcess(logger)
-    if (loggerProc) {
-      loggerProc.postMessage({ payload: 'testing 1 2 3' })
-      loggerProc.postMessage({ payload: 'testing 4 5 6' })
-    }
-  }, 1000)
+  const logger = getProcess(spawn(`${window.location.origin}/current/cmd/logger.js`))
+  if (logger) {
+    logger.on('status', (status) => {
+      if (status === 'RUNNING') {
+        global.console.log('ps', JSON.stringify(ps()))
+        logger.postMessage({ payload: 'testing 1 2 3' })
+        logger.postMessage({ payload: 'testing 4 5 6' })
+      }
+    })
+  }
 }
