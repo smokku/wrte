@@ -19,7 +19,8 @@ export default class Sandbox {
               type: 'application/javascript',
             })
             const worker = new window.Worker(window.URL.createObjectURL(blob), { name })
-            worker.onerror = window.onerror
+            worker.onerror = err =>
+              window.onerror(err.message, err.filename, `${err.lineno}:${err.colno}`)
             worker.onmessage = (evt) => {
               if (evt.isTrusted && typeof evt === 'object') {
                 window.parent.postMessage(evt.data, origin)
@@ -53,9 +54,9 @@ export default class Sandbox {
           }
         }
       }
-      window.onerror = (err) => {
-        console.error(err)
-        window.parent.postMessage('TERMINATE', origin)
+      window.onerror = (err, url, lineNumber) => {
+        setTimeout(() => window.parent.postMessage('TERMINATE', origin), 0)
+        return window.console.error(`${name}(${path}) ${url}:${lineNumber} ${err}`)
       }
       window.parent.postMessage({ type: 'READ', path, id: 'source' }, origin)
     }.toString()})('${window.location.origin}', '${id}', '${path}')</script>`
