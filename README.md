@@ -1,5 +1,6 @@
 # Web Run-Time Environment
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e7e7a22b1f674f77a60e51ab5f66b23c)](https://app.codacy.com/app/tomek_3/wrte?utm_source=github.com&utm_medium=referral&utm_content=smokku/wrte&utm_campaign=badger)
 [![Join the chat at https://gitter.im/wrte/Lobby](https://badges.gitter.im/wrte/Lobby.svg)](https://gitter.im/wrte/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![CircleCI](https://circleci.com/gh/smokku/wrte.svg?style=shield)](https://circleci.com/gh/smokku/wrte)
 [![codebeat](https://codebeat.co/badges/e4e535d2-099d-474c-b97c-4fee3ffaaa90)](https://codebeat.co/projects/github-com-smokku-wrte-master)
