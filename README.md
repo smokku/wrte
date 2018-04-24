@@ -1,7 +1,7 @@
 # Web Run-Time Environment
 
 [![Join the chat at https://gitter.im/wrte/Lobby](https://badges.gitter.im/wrte/Lobby.svg)](https://gitter.im/wrte/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![CircleCI](https://circleci.com/gh/smokku/wrte.svg?style=shield)](https://circleci.com/gh/smokku/wrte)
+[![CircleCI](https://img.shields.io/circleci/project/github/smokku/wrte/master.svg)](https://circleci.com/gh/smokku/wrte)
 [![codebeat](https://codebeat.co/badges/e4e535d2-099d-474c-b97c-4fee3ffaaa90)](https://codebeat.co/projects/github-com-smokku-wrte-master)
 [![codecov](https://codecov.io/gh/smokku/wrte/branch/master/graph/badge.svg)](https://codecov.io/gh/smokku/wrte)
 
