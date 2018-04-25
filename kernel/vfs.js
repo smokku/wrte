@@ -20,11 +20,11 @@ const mounts = {
 }
 
 export function handleMessage (
-  handler: Object,
+  handler: {},
   path: string,
-  from: Object,
-  msg: Object,
-  channel: ?Object
+  from: {},
+  msg: {},
+  channel: ?{}
 ) {
   if (handler.handler) {
     // process in next "tick", to make it similar to process handler type
@@ -52,7 +52,7 @@ export function handleMessage (
  * @param msg - Request _message_.
  * @param channel - _The channel_ the _message_ belongs to.
  */
-function internalHandler (path: string, from: Object, msg: Object, channel: Object) {
+function internalHandler (path: string, from: {}, msg: {}, channel: ?{}) {
   // console.debug('[internal:]', this.volume, this.argv, path, from.pid, msg, channel)
   const parts = path.split('/')
   const int = parts.shift()
@@ -71,7 +71,7 @@ function internalHandler (path: string, from: Object, msg: Object, channel: Obje
   }
 }
 
-export function contentHandler (path: string, from: Object, msg: Object, channel: Object) {
+export function contentHandler (path: string, from: {}, msg: {}, channel: ?{}) {
   const [handler] = this.argv
   if (msg.type === 'READ' && typeof handler === 'function') {
     from.postMessage({
