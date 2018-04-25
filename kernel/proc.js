@@ -1,4 +1,5 @@
 // @flow
+import test from '../lib/tape'
 import EventEmitter from './event-emitter'
 import Sandbox from './sandbox'
 import id from '../lib/id'
@@ -19,6 +20,7 @@ export default function init () {
             proc.postMessage({
               type: 'INIT',
               payload: {
+                pid: proc.pid,
                 path: proc.path,
                 argv: proc.argv,
                 channels: Object.keys(proc.channels),
@@ -41,7 +43,7 @@ export default function init () {
 const PROCESS_STATUS = Symbol('status')
 
 export class Process extends EventEmitter {
-  constructor (pid, path, argv) {
+  constructor (pid: string, path: string, argv: Array<any>) {
     super()
     this.pid = pid
     this.path = path
@@ -51,11 +53,11 @@ export class Process extends EventEmitter {
     this.channels = Object.create(null)
   }
 
-  get status () {
+  get status (): string {
     return this[PROCESS_STATUS]
   }
 
-  set status (status) {
+  set status (status: string) {
     this[PROCESS_STATUS] = status
     this.emit('status', status)
   }
@@ -66,8 +68,8 @@ export class Process extends EventEmitter {
     this.status = 'TERMINATED'
   }
 
-  postMessage (msg) {
-    return this.sandbox.postMessage(msg)
+  postMessage (msg: {}) {
+    this.sandbox.postMessage(msg)
   }
 
   openChannel () {
@@ -77,25 +79,25 @@ export class Process extends EventEmitter {
     return (this.channels[chan] = { id: chan })
   }
 
-  getChannel (chan) {
+  getChannel (chan: string) {
     return this.channels[chan.toString()]
   }
 
-  closeChannel (chan) {
+  closeChannel (chan: string) {
     delete this.channels[chan.toString()]
   }
 }
 
-export function getProcess (pid) {
+export function getProcess (pid: string) {
   return processes[pid]
 }
 
-export function getProcessForWindow (window) {
+export function getProcessForWindow (window: {}) {
   const pid = Object.keys(processes).find(p => processes[p].sandbox.window === window)
   return pid && getProcess(pid)
 }
 
-export function spawn (path: string, argv: Array<any> = []): string | null {
+export function spawn (path: string, argv: Array<mixed> = []): string | null {
   if (!Array.isArray(argv)) {
     global.console.error(`Invalid argv '${typeof argv}' for ${path}`)
     return null
@@ -114,11 +116,11 @@ export function spawn (path: string, argv: Array<any> = []): string | null {
   return pid
 }
 
-export function sanitizeArgv (argv) {
+export function sanitizeArgv (argv: Array<mixed>) {
   return argv.map((arg) => {
     switch (typeof arg) {
       case 'object':
-        return `{${Object.keys(arg).join(',')}}`
+        return arg ? `{${Object.keys(arg).join(',')}}` : arg
       case 'function':
         return `${arg.displayName || arg.name || ''}()`
       default:
@@ -137,3 +139,17 @@ export function ps () {
     status,
   }))
 }
+
+test('sanitizeArgv', (t) => {
+  t.deepEqual(sanitizeArgv([1, 'two']), [1, 'two'])
+  t.deepEqual(sanitizeArgv(['', undefined]), ['', undefined])
+  t.deepEqual(sanitizeArgv([1, { foo: 'bar' }, { baz: 0 }]), [1, '{foo}', '{baz}'])
+  t.deepEqual(sanitizeArgv([{}, undefined, null, {}]), ['{}', undefined, null, '{}'])
+  t.deepEqual(sanitizeArgv([function saniTest () {}, null, () => () => 0, {}]), [
+    'saniTest()',
+    null,
+    '()',
+    '{}',
+  ])
+  t.end()
+})

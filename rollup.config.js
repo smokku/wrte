@@ -44,6 +44,9 @@ const entries = {
   // "cmd/rc.js": "dist/current/cmd/rc.js",
   // "cmd/cat.js": "dist/current/cmd/cat.js",
 }
+if (!production) {
+  entries['test/channel.js'] = 'dist/current/test/channel.js'
+}
 
 export default Object.keys(entries).reduce(
   (configs, entry) =>
