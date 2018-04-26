@@ -14,23 +14,23 @@ export default function () {
     return [schema, path].join('://')
   }
 
-  self.onmessage = (evt) => {
+  global.onmessage = (evt) => {
     const { data } = evt
     // console.debug('[webdav:]', data)
     if (data.type === 'INIT' && !init) {
       init = data.payload
-      self.console.log(`[webdav:] started ${JSON.stringify(init.argv)}`)
+      global.console.log(`[webdav:] started ${JSON.stringify(init.argv)}`)
     } else if (data.type === 'ERROR') {
-      self.console.warn(`[webdav:] ERROR: ${JSON.stringify(data.payload)}`)
+      global.console.warn(`[webdav:] ERROR: ${JSON.stringify(data.payload)}`)
     } else if (data.type === 'READ') {
       const url = buildUrl(data.handler)
-      self.console.debug('[webdav:] fetching', url)
+      global.console.debug('[webdav:] fetching', url)
       fetch(url)
         .then((resp) => {
           if (resp.ok) {
             return resp.arrayBuffer()
           }
-          self.postMessage({
+          global.postMessage({
             type: 'ERROR',
             process: data.process,
             payload: {
@@ -42,7 +42,7 @@ export default function () {
         })
         .then((resp) => {
           if (resp) {
-            self.postMessage(
+            global.postMessage(
               {
                 type: 'DATA',
                 process: data.process,
@@ -54,7 +54,7 @@ export default function () {
           }
         })
         .catch(() => {
-          self.postMessage({
+          global.postMessage({
             type: 'ERROR',
             process: data.process,
             payload: {
@@ -64,8 +64,8 @@ export default function () {
           })
         })
     } else {
-      self.console.warn(`[webdav:] ${JSON.stringify(data)}`)
-      self.postMessage({
+      global.console.warn(`[webdav:] ${JSON.stringify(data)}`)
+      global.postMessage({
         type: 'ERROR',
         process: data.process,
         payload: {
