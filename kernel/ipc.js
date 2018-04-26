@@ -10,6 +10,7 @@ export default function init () {
     if (
       evt.isTrusted &&
       evt.origin === 'null' &&
+      typeof evt.data.type === 'string' &&
       (typeof evt.data.process === 'string' || typeof evt.data.channel === 'string')
     ) {
       // console.log('IPC', evt)

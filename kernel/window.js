@@ -1,11 +1,16 @@
+import EventEmitter from './event-emitter'
+import { handleMessage } from './vfs'
+
 let root
 
 /* eslint-disable no-underscore-dangle */
-class Window {
+class Window extends EventEmitter {
   constructor () {
+    super()
+
     this._frame = document.createElement('iframe')
     this._frame.seamless = true
-    this._frame.sandbox = 'allow-same-origin'
+    this._frame.sandbox = 'allow-same-origin allow-scripts'
     this._frame.className = 'window'
     this._frame.style.position = 'absolute'
 
@@ -20,22 +25,30 @@ class Window {
       width: 0,
       height: 0,
     })
+
+    this.preventKeys = []
   }
 
   show (parent = root) {
     if (this._frame.parent !== parent) {
       parent.appendChild(this._frame)
-      this._body = this._frame.contentWindow.document.body
-      this._body.style.margin = '0'
-      this._body.style.padding = '0'
-      this._body.style.display = 'flex'
-      this._content = this._frame.contentWindow.document.createElement('textarea')
-      this._content.style.flex = '1 1 0'
-      this._content.style.resize = 'none'
-      this._content.style.overflow = 'auto'
-      this._content.style.border = 'none'
-      this._content.style.outline = 'none'
-      this._body.appendChild(this._content)
+
+      if (!this._body) {
+        this._body = this._frame.contentWindow.document.body
+        this._body.style.margin = '0'
+        this._body.style.padding = '0'
+        this._body.style.display = 'flex'
+        this._content = this._frame.contentWindow.document.createElement('code')
+        this._content.contentEditable = true
+        this._content.style.flex = '1 1 0'
+        this._content.style.resize = 'none'
+        this._content.style.overflow = 'auto'
+        this._content.style.border = 'none'
+        this._content.style.outline = 'none'
+        this._body.onkeypress = this.onKeyPress.bind(this)
+        this._body.onfocus = () => this._frame.focus()
+        this._body.appendChild(this._content)
+      }
     }
   }
 
@@ -69,6 +82,14 @@ class Window {
       delete this._dragStartEvent
     }
   }
+
+  onKeyPress (evt) {
+    const { key } = evt
+    if (this.preventKeys.includes(key)) {
+      evt.preventDefault()
+    }
+    this.emit('key', key)
+  }
 }
 /* eslint-enable no-underscore-dangle */
 
@@ -78,20 +99,37 @@ export function init () {
 }
 
 export function handler (path, from, msg, channel) {
-  // global.console.log('[window:]', msg.type, this.argv, path, from.pid, msg, channel)
+  global.console.log('[window:]', msg.type, this.argv, path, from.pid, msg, channel)
   const { type, payload } = msg
-  const { position } = payload || {}
-  let { window: win } = channel
+  const { position } = typeof payload === 'object' ? payload : {}
+  const { meta } = channel
+  let win
   switch (type) {
     case 'OPEN':
-      if (!win) {
-        // eslint-disable-next-line no-multi-assign, no-param-reassign
-        win = channel.window = new Window()
+      if (!meta) {
+        win = new Window()
+        // eslint-disable-next-line no-param-reassign
+        channel.meta = {
+          window: win,
+          pid: from.pid,
+        }
+        win.on('key', (key) => {
+          const data = {
+            type: 'KEY',
+            payload: {
+              type: 'PRESS',
+              key,
+            },
+          }
+          handleMessage(channel.handler, path, from, data, channel)
+        })
+      } else {
+        win = meta.window
       }
       if (position) win.setPosition(position)
       win.show()
       break
     default:
-    // pass
+      global.console.warn(`[window:] unhandled message: ${JSON.stringify(msg)}`)
   }
 }
