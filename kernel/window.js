@@ -1,10 +1,8 @@
+// @flow
 import EventEmitter from './event-emitter'
-import { handleMessage } from './vfs'
-
-let root
 
 /* eslint-disable no-underscore-dangle */
-class Window extends EventEmitter {
+export default class Window extends EventEmitter {
   constructor () {
     super()
 
@@ -29,7 +27,7 @@ class Window extends EventEmitter {
     this.preventKeys = []
   }
 
-  show (parent = root) {
+  show (parent: {}) {
     if (this._frame.parent !== parent) {
       parent.appendChild(this._frame)
 
@@ -89,47 +87,5 @@ class Window extends EventEmitter {
       evt.preventDefault()
     }
     this.emit('key', key)
-  }
-}
-/* eslint-enable no-underscore-dangle */
-
-export function init () {
-  root = document.body
-  global.console.log('[window:]', 'Obtained BODY reference')
-}
-
-export function handler (path, from, msg, channel) {
-  global.console.log('[window:]', msg.type, this.argv, path, from.pid, msg, channel)
-  const { type, payload } = msg
-  const { position } = typeof payload === 'object' ? payload : {}
-  const { meta } = channel
-  let win
-  switch (type) {
-    case 'OPEN':
-      if (!meta) {
-        win = new Window()
-        // eslint-disable-next-line no-param-reassign
-        channel.meta = {
-          window: win,
-          pid: from.pid,
-        }
-        win.on('key', (key) => {
-          const data = {
-            type: 'KEY',
-            payload: {
-              type: 'PRESS',
-              key,
-            },
-          }
-          handleMessage(channel.handler, path, from, data, channel)
-        })
-      } else {
-        win = meta.window
-      }
-      if (position) win.setPosition(position)
-      win.show()
-      break
-    default:
-      global.console.warn(`[window:] unhandled message: ${JSON.stringify(msg)}`)
   }
 }

@@ -1,8 +1,11 @@
 // @flow
 import test from '../lib/tape'
+
 import { spawn, getProcessForWindow, getProcess, sanitizeArgv } from './proc'
-import { init as consoleInit, handler as consoleHandler } from './console'
-import { init as windowInit, handler as windowHandler } from './window'
+
+import { init as consoleInit, handler as consoleHandler } from './internal/console'
+import { init as windowInit, handler as windowHandler } from './internal/window'
+
 import webdav from './vfs/webdav'
 
 const handlers = Object.create(null)
@@ -71,6 +74,15 @@ function internalHandler (path: string, from: {}, msg: {}, channel: ?{}) {
   }
 }
 
+/**
+ * Handler function for built-in VFS process handlers. It serves the content
+ * of virtual `internal:` file to be launched as VFS handler process.
+ *
+ * @param path - Request _path_.
+ * @param from - Requesting process.
+ * @param msg - Request _message_.
+ * @param channel - _The channel_ the _message_ belongs to.
+ */
 export function contentHandler (path: string, from: {}, msg: {}, channel: ?{}) {
   const [handler] = this.argv
   if (msg.type === 'READ' && typeof handler === 'function') {
