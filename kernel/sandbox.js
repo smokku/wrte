@@ -1,3 +1,4 @@
+// @flow
 /* eslint-disable func-names, no-multi-assign */
 export default class Sandbox {
   constructor (id, path) {
