@@ -7,6 +7,10 @@ global.console.log('[test/channel] starting')
 
 global.onmessage = (evt) => {
   const { data } = evt
+  if (data === 'PING') {
+    global.postMessage('PONG')
+    return
+  }
   const { type, payload } = data
   // console.log(`[test/channel ${init ? init.pid : '?'}]`, data)
   if (type === 'INIT' && !init) {
@@ -43,11 +47,11 @@ global.onmessage = (evt) => {
         reply = 'PONG2'
         break
       case 'PONG2':
-        console.log('TEST DONE!')
-        global.close()
+        console.log('[test/channel] TEST SUCCESS')
+        global.postMessage('TERMINATE')
         return
       default:
-        console.error('TEST FAILED!')
+        console.error('[test/channel] TEST FAILED!')
         global.close()
         return
     }

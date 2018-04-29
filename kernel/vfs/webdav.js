@@ -16,6 +16,10 @@ export default function () {
 
   global.onmessage = (evt) => {
     const { data } = evt
+    if (data === 'PING') {
+      global.postMessage('PONG')
+      return
+    }
     // console.debug('[webdav:]', data)
     if (data.type === 'INIT' && !init) {
       init = data.payload

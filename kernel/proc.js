@@ -111,6 +111,7 @@ export function spawn (path: string, argv: Array<mixed> = []): string | null {
   processes[pid].on('status', (status) => {
     if (status === 'TERMINATED') {
       delete processes[pid]
+      global.console.log(`Terminated "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
     }
   })
   return pid
