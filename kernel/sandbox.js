@@ -24,11 +24,24 @@ export default class Sandbox {
               window.onerror(err.message, err.filename, `${err.lineno}:${err.colno}`)
             worker.onmessage = (evt) => {
               if (evt.isTrusted && typeof evt === 'object') {
-                window.parent.postMessage(evt.data, origin)
+                if (evt.data === 'PONG') {
+                  window.lastPong = Date.now()
+                }
+                if (evt.data === 'TERMINATE' || typeof evt.data === 'object') {
+                  window.parent.postMessage(evt.data, origin)
+                }
               }
             }
+            window.lastPong = Date.now()
+            setInterval(() => {
+              worker.postMessage('PING')
+              if (Date.now() - window.lastPong > 2000) {
+                window.console.error(`${name}(${path}) failed PING/PONG reply since ${window.lastPong}`)
+                window.parent.postMessage('TERMINATE', origin)
+              }
+            }, 1000)
             window.onmessage = (evt) => {
-              if (evt.isTrusted && evt.origin === origin && typeof evt.data === 'object') {
+              if (evt.isTrusted && evt.origin === origin && typeof evt === 'object' && typeof evt.data === 'object') {
                 if (window.msgQueue) {
                   if (evt.data.type === 'INIT') {
                     const { msgQueue } = window

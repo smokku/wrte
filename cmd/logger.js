@@ -9,6 +9,10 @@ global.console.log('[logger] starting')
 
 global.onmessage = (evt) => {
   const { data } = evt
+  if (data === 'PING') {
+    global.postMessage('PONG')
+    return
+  }
   // console.debug('[logger]', data)
   if (data.type === 'INIT' && !init) {
     init = data.payload
