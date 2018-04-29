@@ -1,3 +1,14 @@
+// @flow
+
+/**
+ * This test works like this.
+ * 1. Spawn two processes, pointing P2 to P1 pid using arg
+ * 2. Open channel to P1 from P2
+ * 3. Send a sequence of messages: PING, PONG, PING2, PONG2
+ * 4. PONG2 causes TERMINATE in process P2
+ * 5. TERMINATE process causes CLOSE channel in P1 -> TEST SUCCESS
+ */
+
 let init = null
 const channels = {}
 
@@ -24,14 +35,29 @@ global.onmessage = (evt) => {
         process: dest,
       })
     }
-  } else if (type === 'CHANNEL' && data.process) {
-    channels[data.process] = data.channel
-    if (dest) {
-      global.postMessage({
-        type: 'DATA',
-        channel: channels[dest],
-        payload: 'PING',
-      })
+    setTimeout(() => {
+      global.console.error('[test/channel] TEST FAILED!')
+      global.close()
+    }, 1000)
+  } else if (type === 'CHANNEL' && typeof data.channel === 'string') {
+    if (data.process) {
+      channels[data.channel] = data.process
+      if (dest && data.process === dest) {
+        global.postMessage({
+          type: 'DATA',
+          channel: data.channel,
+          payload: 'PING',
+        })
+      }
+    } else {
+      const channel = channels[data.channel]
+      if (channel) {
+        if (!dest) {
+          global.console.log('[test/channel] TEST SUCCESS')
+        }
+        global.postMessage('TERMINATE')
+      }
+      delete channels[data.channel]
     }
   } else if (type === 'DATA' && data.channel) {
     global.console.log(`[test/channel ${init ? init.pid : '?'}] DATA: ${JSON.stringify(payload)}`)
@@ -47,11 +73,10 @@ global.onmessage = (evt) => {
         reply = 'PONG2'
         break
       case 'PONG2':
-        console.log('[test/channel] TEST SUCCESS')
         global.postMessage('TERMINATE')
         return
       default:
-        console.error('[test/channel] TEST FAILED!')
+        global.console.error('[test/channel] TEST FAILED!')
         global.close()
         return
     }
