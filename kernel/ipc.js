@@ -3,6 +3,14 @@ import test from '../lib/tape'
 import { getProcess, getProcessForWindow, spawn } from './proc'
 import { handleMessage } from './vfs'
 
+function setChannel (process: {}, chan: string, pid: string | null) {
+  process.postMessage({
+    type: 'CHANNEL',
+    process: pid,
+    channel: chan,
+  })
+}
+
 export default function init () {
   global.console.log('Initializing IPC')
 
@@ -30,23 +38,17 @@ export default function init () {
         if (process) {
           dest = getProcess(process)
 
-          if (data.type === 'OPEN') {
+          if (dest && data.type === 'OPEN') {
             const destChan = dest.openChannel()
             const fromChan = from.openChannel()
             destChan.pid = from.pid
             destChan.endpoint = fromChan.id
             fromChan.pid = dest.pid
             fromChan.endpoint = destChan.id
-            dest.postMessage({
-              type: 'CHANNEL',
-              process: destChan.pid,
-              channel: destChan.id,
-            })
-            from.postMessage({
-              type: 'CHANNEL',
-              process: fromChan.pid,
-              channel: fromChan.id,
-            })
+            setChannel(dest, destChan.id, destChan.pid)
+            setChannel(from, fromChan.id, fromChan.pid)
+            destChan.onTerminate = () => setChannel(from, fromChan.id, null)
+            fromChan.onTerminate = () => setChannel(dest, destChan.id, null)
             return
           }
         }
@@ -67,18 +69,11 @@ export default function init () {
                   destProcess.closeChannel(fromChan.endpoint)
                 }
                 from.closeChannel(fromChan.id)
-                from.postMessage({
-                  type: 'CHANNEL',
-                  process: null,
-                  channel: fromChan.id,
-                })
+                setChannel(from, fromChan.id, null)
                 if (destProcess) {
-                  destProcess.postMessage({
-                    type: 'CHANNEL',
-                    process: null,
-                    channel: fromChan.endpoint,
-                  })
+                  setChannel(destProcess, fromChan.endpoint, null)
                 }
+                return
               }
 
               if (destProcess) {

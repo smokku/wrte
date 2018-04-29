@@ -85,7 +85,9 @@ export default class Sandbox {
     this.window = null
   }
 
-  postMessage (msg) {
-    this.window.postMessage(msg, '*')
+  postMessage (msg: {}) {
+    if (this.window) {
+      this.window.postMessage(msg, '*')
+    }
   }
 }

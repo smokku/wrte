@@ -63,7 +63,12 @@ export class Process extends EventEmitter {
   }
 
   terminate () {
-    // FIXME: what about other ends of this.channels? we should CLOSE them
+    Object.keys(this.channels).forEach((chan) => {
+      const channel = this.channels[chan]
+      if (channel) {
+        if (channel.onTerminate) channel.onTerminate()
+      }
+    })
     this.sandbox.terminate()
     this.status = 'TERMINATED'
   }
@@ -80,19 +85,19 @@ export class Process extends EventEmitter {
   }
 
   getChannel (chan: string) {
-    return this.channels[chan.toString()]
+    return this.channels[chan]
   }
 
   closeChannel (chan: string) {
-    delete this.channels[chan.toString()]
+    delete this.channels[chan]
   }
 }
 
-export function getProcess (pid: string) {
+export function getProcess (pid: string): {} {
   return processes[pid]
 }
 
-export function getProcessForWindow (window: {}) {
+export function getProcessForWindow (window: {}): {} {
   const pid = Object.keys(processes).find(p => processes[p].sandbox.window === window)
   return pid && getProcess(pid)
 }
