@@ -73,8 +73,8 @@ export default class Window extends EventEmitter {
 
   dragEnd (evt) {
     if (this._dragStartEvent) {
-      const dx = evt.x - this._dragStartEvent.x
-      const dy = evt.y - this._dragStartEvent.y
+      const dx = evt.screenX - this._dragStartEvent.screenX
+      const dy = evt.screenY - this._dragStartEvent.screenY
       this._frame.style.left = `${parseInt(this._frame.style.left, 10) + dx}px`
       this._frame.style.top = `${parseInt(this._frame.style.top, 10) + dy}px`
       delete this._dragStartEvent
