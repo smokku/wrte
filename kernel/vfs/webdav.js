@@ -1,3 +1,6 @@
+// @flow
+import { errorReply } from '../errors'
+
 export default function () {
   let init
 
@@ -34,14 +37,7 @@ export default function () {
           if (resp.ok) {
             return resp.arrayBuffer()
           }
-          global.postMessage({
-            type: 'ERROR',
-            process: data.process,
-            payload: {
-              type: resp.status === 404 ? 'ENOENT' : 'EPERM',
-              path: data.path,
-            },
-          })
+          global.postMessage(errorReply(resp.status === 404 ? 'ENOENT' : 'EPERM', data))
           return null
         })
         .then((resp) => {
