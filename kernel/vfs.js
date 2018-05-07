@@ -1,7 +1,11 @@
 // @flow
 import test from '../lib/tape'
 
+import type { Message } from './ipc'
+import type { Process } from './proc'
+
 import { spawn, getProcessForWindow, getProcess, sanitizeArgv } from './proc'
+import { errorReply } from './errors'
 
 import { init as consoleInit, handler as consoleHandler } from './internal/console'
 import { init as windowInit, handler as windowHandler } from './internal/window'
@@ -55,7 +59,7 @@ export function handleMessage (
  * @param msg - Request _message_.
  * @param channel - _The channel_ the _message_ belongs to.
  */
-function internalHandler (path: string, from: {}, msg: {}, channel: ?{}) {
+function internalHandler (path: string, from: Process, msg: Message, channel: ?{}) {
   // console.debug('[internal:]', this.volume, this.argv, path, from.pid, msg, channel)
   const parts = path.split('/')
   const int = parts.shift()
@@ -64,13 +68,7 @@ function internalHandler (path: string, from: {}, msg: {}, channel: ?{}) {
   if (typeof handler === 'function') {
     handler.call({ argv }, parts.join('/'), from, msg, channel)
   } else {
-    from.postMessage({
-      type: 'ERROR',
-      payload: {
-        type: 'ENOENT',
-        path: msg.path,
-      },
-    })
+    from.postMessage(errorReply('ENOENT', msg))
   }
 }
 
