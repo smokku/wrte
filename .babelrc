@@ -1,4 +1,9 @@
 {
   "presets": ["@babel/preset-flow"],
-  "plugins": ["@babel/plugin-syntax-object-rest-spread"]
+  "plugins": ["@babel/plugin-syntax-object-rest-spread"],
+  "env": {
+    "ci": {
+      "plugins": ["@babel/plugin-proposal-object-rest-spread"]
+    }
+  }
 }
