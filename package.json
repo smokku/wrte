@@ -8,6 +8,7 @@
   "license": "AGPL-3.0",
   "devDependencies": {
     "@babel/core": "7.0.0-beta.47",
+    "@babel/plugin-proposal-object-rest-spread": "7.0.0-beta.47",
     "@babel/plugin-syntax-object-rest-spread": "7.0.0-beta.47",
     "@babel/preset-env": "7.0.0-beta.47",
     "@babel/preset-flow": "7.0.0-beta.47",
@@ -16,7 +17,7 @@
     "babel-plugin-discard-module-references": "1.1.2",
     "browser-run": "5.0.0",
     "documentation": "github:documentationjs/documentation#fb6ebdb",
-    "eslint": "github:smokku/eslint#ca8106b",
+    "eslint": "github:smokku/eslint#2839aa6e",
     "eslint-config-airbnb-base": "12.1.0",
     "eslint-config-standard": "11.0.0",
     "eslint-config-standard-jsdoc": "0.3.2",
