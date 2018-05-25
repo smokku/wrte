@@ -6,7 +6,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8-stretch-browsers@sha256:f5ceb089c4c100f7854f216b9873d0a0508a23565bacf1e6ee8b6932ce54cd1d
+      - image: circleci/node:8-stretch-browsers@sha256:c120468973c2b7bf0e2467d66acb04cd17fa9256128424514cc917991f7bc494
       # - image: circleci/mongo:3.4.4
     working_directory: ~/repo
     steps:
