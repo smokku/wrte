@@ -47,7 +47,7 @@ jobs:
             codecov
       - run:
           name: Build
-          command: npm build
+          command: npm run build
       - deploy:
           name: Install AWS tool
           command: |
