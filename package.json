@@ -15,6 +15,7 @@
     "@babel/register": "7.0.0-beta.51",
     "babel-eslint": "8.2.3",
     "babel-plugin-discard-module-references": "1.1.2",
+    "babel-plugin-istanbul": "^4.1.6",
     "browser-run": "5.0.0",
     "documentation": "github:documentationjs/documentation#fb6ebdb",
     "eslint": "github:smokku/eslint#2839aa6e",
@@ -46,9 +47,8 @@
     "watch": "rollup -c -w",
     "dev": "npm-run-all --parallel start watch",
     "start": "live-server --verbose --no-browser --cors dist/",
-    "pretest": "NODE_ENV=ci npm run build",
-    "test": "cat dist/current/*.js dist/current/*/*.js | browser-run --static ./dist/ | tap-spec",
-    "cov": "nyc npm test",
+    "pretest": "NODE_ENV=test npm run build",
+    "test": "cat dist/current/*.js dist/current/*/*.js | browser-run --static ./dist/ | tee test.log | grep -v '^:cov ' | npx tap-spec",
     "predocs": "cd node_modules/documentation && npm install",
     "docs": "documentation build 'kernel/**.js' 'lib/**.js' 'cmd/**.js' -f html -o docs"
   }
