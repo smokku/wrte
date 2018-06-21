@@ -11,8 +11,13 @@ global.console.log(`${VERSION} booting...`)
 document.title = VERSION
 window.onload = main
 
-if (process.env.NODE_ENV === 'ci') {
+if (process.env.NODE_ENV === 'test') {
   test.onFinish(() => {
+    // eslint-disable-next-line no-underscore-dangle
+    Object.values(window.__coverage__).forEach((cov) => {
+      // eslint-disable-next-line no-console
+      console.log(':cov', cov.hash, JSON.stringify({ [cov.path]: cov }))
+    })
     window.close()
   })
 }

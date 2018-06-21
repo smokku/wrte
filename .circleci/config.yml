@@ -12,36 +12,36 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          name: Restore Yarn Package Cache
+          name: Restore NPM Package Cache
           keys:
-            - yarn-packages-{{ .Branch }}-{{ checksum "package.json" }}
-            - yarn-packages-{{ .Branch }}
-            - yarn-packages-master
-            - yarn-packages-
+            - npm-packages-{{ .Branch }}-{{ checksum "package.json" }}
+            - npm-packages-{{ .Branch }}
+            - npm-packages-master
+            - npm-packages-
       - run:
           name: Install Dependencies
-          command: yarn install
+          command: npm install
       - save_cache:
-          name: Save Yarn Package Cache
-          key: yarn-packages-{{ .Branch }}-{{ checksum "package.json" }}
+          name: Save NPM Package Cache
+          key: npm-packages-{{ .Branch }}-{{ checksum "package.json" }}
           paths:
             - node_modules/
       - run:
           name: Test
-          command: yarn test
-      - run:
-          name: Test code coverage
-          command: yarn cov
+          command: npm test
       - run:
           name: Code coverage report
           command: |
             sudo npm install -g codeclimate-test-reporter codecov
-            ./node_modules/.bin/nyc report --reporter=text-lcov > coverage.lcov
+            rm -rf .nyc_output
+            mkdir -p .nyc_output
+            grep '^:cov ' test.log | bash -c 'while read COV HASH OBJECT; do echo $OBJECT > .nyc_output/$HASH.json; done'
+            npx nyc report --reporter=text-lcov > coverage.lcov
             codeclimate-test-reporter < coverage.lcov
             codecov
       - run:
           name: Build
-          command: yarn build
+          command: npm build
       - deploy:
           name: Install AWS tool
           command: |

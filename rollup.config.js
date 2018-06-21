@@ -6,7 +6,7 @@ import pkg from './package.json'
 
 // `npm run build` -> `production` is true
 // `npm run dev` -> `production` is false
-const production = !process.env.ROLLUP_WATCH && process.env.NODE_ENV !== 'ci'
+const production = !process.env.ROLLUP_WATCH && process.env.NODE_ENV !== 'test'
 
 const babelConfig = {
   exclude: 'node_modules/**',
