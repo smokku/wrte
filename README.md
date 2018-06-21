@@ -1,5 +1,6 @@
 # Web Run-Time Environment
 
+[![Discord](https://img.shields.io/discord/459356016912367626.svg)](https://discord.gg/HFQ6mc8)
 [![CircleCI](https://img.shields.io/circleci/project/github/smokku/wrte/master.svg)](https://circleci.com/gh/smokku/wrte)
 [![codebeat](https://codebeat.co/badges/e4e535d2-099d-474c-b97c-4fee3ffaaa90)](https://codebeat.co/projects/github-com-smokku-wrte-master)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/15562/badge.svg)](https://scan.coverity.com/projects/smokku-wrte)
