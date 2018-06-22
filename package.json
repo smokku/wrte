@@ -13,7 +13,7 @@
     "@babel/preset-env": "7.0.0-beta.51",
     "@babel/preset-flow": "7.0.0-beta.51",
     "@babel/register": "7.0.0-beta.51",
-    "babel-eslint": "8.2.3",
+    "babel-eslint": "8.2.4",
     "babel-plugin-discard-module-references": "1.1.2",
     "babel-plugin-istanbul": "4.1.6",
     "browser-run": "5.0.0",
