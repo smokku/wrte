@@ -1,3 +1,7 @@
+// @flow
+import type { Message } from '../ipc'
+import type { Process, Channel } from '../proc'
+
 let root
 
 export function init () {
@@ -12,7 +16,7 @@ export function init () {
   global.console.log('[console:]', 'Created root window')
 }
 
-export function handler (path, from, msg, channel) {
+export function handler (to: Pid | Channel, from: Process, msg: Message) {
   // global.console.log('[console:]', msg.type, this.argv, path, from.pid, msg)
   if (msg.type === 'DATA' && typeof msg.payload === 'string') {
     root.innerText += `${msg.payload}\n`

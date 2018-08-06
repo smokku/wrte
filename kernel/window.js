@@ -1,21 +1,41 @@
-// @flow
+// @flow strict
+/* eslint-disable no-underscore-dangle */
+import test from '../lib/tape'
+import { spawn } from './proc'
+
 import EventEmitter from './event-emitter'
 
-/* eslint-disable no-underscore-dangle */
+export type Rect = {
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+}
+
 export default class Window extends EventEmitter {
+  _frame: HTMLIFrameElement
+
+  _body: HTMLElement
+
+  _content: HTMLElement
+
+  _dragStartEvent: DragEvent
+
+  preventKeys: Array<string>
+
   constructor () {
     super()
 
     this._frame = document.createElement('iframe')
-    this._frame.seamless = true
-    this._frame.sandbox = 'allow-same-origin allow-scripts'
+    this._frame.sandbox.add('allow-same-origin')
+    this._frame.sandbox.add('allow-scripts')
     this._frame.className = 'window'
     this._frame.style.position = 'absolute'
 
     this._frame.style.resize = 'both'
     this._frame.draggable = true
-    this._frame.ondragstart = this.dragStart.bind(this)
-    this._frame.ondragend = this.dragEnd.bind(this)
+    this._frame.addEventListener('dragstart', this.dragStart.bind(this))
+    this._frame.addEventListener('dragend', this.dragEnd.bind(this))
 
     this.setPosition({
       x: 0,
@@ -27,8 +47,8 @@ export default class Window extends EventEmitter {
     this.preventKeys = []
   }
 
-  show (parent: {}) {
-    if (this._frame.parent !== parent) {
+  show (parent: ?HTMLElement) {
+    if (parent && this._frame.parentNode !== parent) {
       parent.appendChild(this._frame)
 
       if (!this._body) {
@@ -51,8 +71,8 @@ export default class Window extends EventEmitter {
   }
 
   hide () {
-    if (this._frame.parent) {
-      this._frame.parent.removeChild(this._frame)
+    if (this._frame.parentNode) {
+      this._frame.parentNode.removeChild(this._frame)
     }
   }
 
@@ -60,18 +80,18 @@ export default class Window extends EventEmitter {
     this.hide()
   }
 
-  setPosition (position) {
+  setPosition (position: Rect) {
     if (position.x != null) this._frame.style.left = `${position.x}px`
     if (position.y != null) this._frame.style.top = `${position.y}px`
     if (position.width != null) this._frame.style.width = `${position.width}px`
     if (position.height != null) this._frame.style.height = `${position.height}px`
   }
 
-  dragStart (evt) {
+  dragStart (evt: DragEvent) {
     this._dragStartEvent = evt
   }
 
-  dragEnd (evt) {
+  dragEnd (evt: DragEvent) {
     if (this._dragStartEvent) {
       const dx = evt.screenX - this._dragStartEvent.screenX
       const dy = evt.screenY - this._dragStartEvent.screenY
@@ -81,7 +101,7 @@ export default class Window extends EventEmitter {
     }
   }
 
-  onKeyPress (evt) {
+  onKeyPress (evt: KeyboardEvent) {
     const { key } = evt
     if (this.preventKeys.includes(key)) {
       evt.preventDefault()
@@ -89,3 +109,9 @@ export default class Window extends EventEmitter {
     this.emit('key', key)
   }
 }
+
+test('window', (t) => {
+  const win = spawn(`${window.location.origin}/current/test/window.js`)
+  t.ok(win)
+  t.end()
+})

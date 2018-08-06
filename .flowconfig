@@ -1,4 +1,5 @@
 [ignore]
+<PROJECT_ROOT>/node_modules/.*
 <PROJECT_ROOT>/dist/.*
 
 [include]
@@ -10,3 +11,11 @@
 [options]
 
 [strict]
+nonstrict-import
+unclear-type
+unsafe-getters-setters
+untyped-import
+untyped-type-import
+sketchy-null
+
+# https://www.saltycrane.com/flow-type-cheat-sheet/latest/
