@@ -1,7 +1,7 @@
-// @flow
+// @flow strict
 
 /**
- * This test works like this.
+ * This test works like this:
  * 1. Spawn two processes, pointing P2 to P1 pid using arg
  * 2. Open channel to P1 from P2
  * 3. Send a sequence of messages: PING, PONG, PING2, PONG2

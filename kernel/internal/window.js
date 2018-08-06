@@ -1,5 +1,9 @@
+// @flow strict
+import type { Message } from '../ipc'
+import type { Process, Channel } from '../proc'
+
 import Window from '../window'
-import { handleMessage } from '../vfs'
+import { errorReply } from '../ipc'
 
 let root
 
@@ -8,38 +12,47 @@ export function init () {
   global.console.log('[window:]', 'Obtained BODY reference')
 }
 
-export function handler (path, from, msg, channel) {
-  global.console.log('[window:]', msg.type, this.argv, path, from.pid, msg, channel)
-  const { type, payload } = msg
-  const { position } = typeof payload === 'object' ? payload : {}
-  const { meta } = channel
-  let win
-  switch (type) {
-    case 'OPEN':
-      if (!meta) {
-        win = new Window()
-        // eslint-disable-next-line no-param-reassign
-        channel.meta = {
-          window: win,
-          pid: from.pid,
-        }
-        win.on('key', (key) => {
-          const data = {
-            type: 'KEY',
-            payload: {
-              type: 'PRESS',
-              key,
-            },
+export function handler (to: Pid | Channel, from: Process, msg: Message) {
+  global.console.log('[window:]', msg.type, this.argv, to, from.pid, msg)
+  if (typeof to === 'object') {
+    const channel: Channel = to
+    const { type, payload } = msg || {}
+    const { position } = typeof payload === 'object' ? payload : {}
+    let win
+    switch (type) {
+      case 'OPEN':
+        if (!channel.meta) {
+          win = new Window()
+          channel.meta = {
+            window: win,
+            pid: from.pid,
           }
-          handleMessage(channel.handler, path, from, data, channel)
-        })
-      } else {
-        win = meta.window
-      }
-      if (position) win.setPosition(position)
-      win.show(root)
-      break
-    default:
-      global.console.warn(`[window:] unhandled message: ${JSON.stringify(msg)}`)
+          win.on('key', (key) => {
+            if (typeof channel.handler === 'function') {
+              channel.send({
+                type: 'KEY',
+                payload: {
+                  type: 'PRESS',
+                  key,
+                },
+              })
+            }
+          })
+        } else {
+          win = channel.meta.window
+        }
+        if (position) win.setPosition(position)
+        win.show(root)
+        break
+      case 'CLOSE':
+        if (channel.meta) {
+          win = channel.meta.window
+        }
+        break
+      default:
+        global.console.warn(`[window:] unhandled message: ${JSON.stringify(msg)}`)
+    }
+  } else {
+    from.postMessage(errorReply('ENOENT', msg))
   }
 }

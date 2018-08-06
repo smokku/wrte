@@ -1,11 +1,18 @@
 // @flow
 import test from '../lib/tape'
+
+import type { Message, Channel } from './ipc'
+
 import EventEmitter from './event-emitter'
 import Sandbox from './sandbox'
 import id from '../lib/id'
 
-const processes = Object.create(null)
+// FIXME: replace with Map()
+const processes: {| [string]: Process |} = (Object.create(null): any)
 
+/**
+ * PROC init()ialization.
+ */
 export default function init () {
   global.console.log('Initializing PROC')
 
@@ -42,22 +49,51 @@ export default function init () {
 
 const PROCESS_STATUS = Symbol('status')
 
+/// _Process_ ID
+export type Pid = string
+export type ProcessStatus = 'SPAWNING' | 'RUNNING' | 'TERMINATING' | 'TERMINATED'
+
+/**
+ * Process class.
+ * Wrapper for iframe+WebWorker untrusted code {Sandbox}. Used to spawn, control
+ * and terminate underlying WebWorker process.
+ *
+ * @export
+ * @class Process
+ * @extends {EventEmitter}
+ */
 export class Process extends EventEmitter {
-  constructor (pid: string, path: string, argv: Array<any>) {
+  pid: Pid
+
+  path: string
+
+  argv: Array<mixed>
+
+  status: ProcessStatus
+
+  sandbox: Sandbox
+
+  channels: {| [string]: Channel |}
+
+  capabilities: Array<Capability>
+
+  constructor (pid: Pid, path: string, argv: Array<mixed>) {
     super()
     this.pid = pid
     this.path = path
     this.argv = argv
     this.status = 'SPAWNING'
     this.sandbox = new Sandbox(pid, path)
-    this.channels = Object.create(null)
+    this.channels = (Object.create(null): any)
   }
 
   get status (): string {
+    // $FlowFixMe: Until flow supports computed properties
     return this[PROCESS_STATUS]
   }
 
   set status (status: string) {
+    // $FlowFixMe: Until flow supports computed properties
     this[PROCESS_STATUS] = status
     this.emit('status', status)
   }
@@ -73,37 +109,55 @@ export class Process extends EventEmitter {
     this.status = 'TERMINATED'
   }
 
-  postMessage (msg: {}) {
+  postMessage (msg: Message) {
     this.sandbox.postMessage(msg)
   }
 
-  openChannel () {
+  openChannel (): Channel {
     let chan = id()
     // create unique channel id
     while (Object.prototype.hasOwnProperty.call(this.channels, chan)) chan = id()
     return (this.channels[chan] = { id: chan })
   }
 
-  getChannel (chan: string) {
+  getChannel (chan: string): Channel {
     return this.channels[chan]
   }
 
-  closeChannel (chan: string) {
+  closeChannel (chan: string): void {
     delete this.channels[chan]
   }
 }
 
-export function getProcess (pid: string): {} {
-  return processes[pid]
+/**
+ * Get _Process_ object by _Pid_.
+ * @param pid - _Process_ ID.
+ * @returns _Process_.
+ */
+export function getProcess (pid: Pid): ?Process {
+  return pid ? processes[pid] : null
 }
 
-export function getProcessForWindow (window: {}): {} {
+/**
+ * Get _Process_ object by its iframe window.
+ * @param window - Sandbox iframe window reference.
+ * @returns _Process_.
+ */
+export function getProcessForWindow (window: WindowProxy): ?Process {
   const pid = Object.keys(processes).find(p => processes[p].sandbox.window === window)
-  return pid && getProcess(pid)
+  return pid ? getProcess(pid) : null
 }
 
-export function spawn (path: string, argv: Array<mixed> = []): string | null {
-  if (!Array.isArray(argv)) {
+export type ArgV = Array<mixed>
+
+/**
+ * Spawn a new _Process_.
+ * @param path - VFS _Path_ to process script.
+ * @param argv - Arguments array.
+ * @returns _Process_ Id.
+ */
+export function spawn (path: string, argv: ArgV = []): Pid | null {
+  if (typeof path !== 'string' || !Array.isArray(argv)) {
     global.console.error(`Invalid argv '${typeof argv}' for ${path}`)
     return null
   }
@@ -122,7 +176,13 @@ export function spawn (path: string, argv: Array<mixed> = []): string | null {
   return pid
 }
 
-export function sanitizeArgv (argv: Array<mixed>) {
+/**
+ * Mangle argv for display purposes.
+ *
+ * @param argv - Arguments array.
+ * @returns Mangled array.
+ */
+export function sanitizeArgv (argv: ArgV): Array<mixed> {
   return argv.map((arg) => {
     switch (typeof arg) {
       case 'object':
@@ -135,10 +195,22 @@ export function sanitizeArgv (argv: Array<mixed>) {
   })
 }
 
-export function ps () {
+export type ProcessInfo = {
+  pid: Pid,
+  path: string,
+  argv: Array<mixed>,
+  status: ProcessStatus,
+}
+
+/**
+ * Get _Process_es information.
+ *
+ * @returns Process information array.
+ */
+export function ps (): Array<ProcessInfo> {
   return Object.values(processes).map(({
     pid, path, argv, status,
-  }) => ({
+  }: any) => ({
     pid,
     path,
     argv: sanitizeArgv(argv),

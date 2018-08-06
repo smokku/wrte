@@ -25,10 +25,19 @@
         "exports": "always-multiline"
       }
     ],
-    "unicorn/prefer-add-event-listener": "off", // we _want_ to have only one handler
     "tape/no-ignored-test-files": "off", // we have tests all over the code
-    "flowtype/no-types-missing-file-annotation": "off",
-    "require-jsdoc": "off",
+    "require-jsdoc": [
+      "error",
+      {
+        "require": {
+          "FunctionDeclaration": true,
+          "MethodDefinition": false,
+          "ClassDeclaration": true,
+          "ArrowFunctionExpression": false,
+          "FunctionExpression": false
+        }
+      }
+    ],
     "valid-jsdoc": [
       "warn",
       {
@@ -40,6 +49,9 @@
     ],
     "jsdoc/require-param-type": "off",
     "jsdoc/require-returns-type": "off",
-    "jsdoc/require-returns-description": "off"
+    "jsdoc/require-returns-description": "off",
+    "no-use-before-define": "off", // we use types before defined
+    "import/no-cycle": "off", // we cyclic-import types, and Flow detects cycles anyway
+    "no-param-reassign": "off"
   }
 }

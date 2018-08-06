@@ -40,15 +40,17 @@
     "rollup-plugin-replace": "2.0.0",
     "rollup-plugin-root-import": "0.2.3",
     "tap-junit": "2.0.0",
-    "tap-spec": "5.0.0",
+    "tap-spec": "5.0.0"
+  },
+  "dependencies": {
     "tape-rollup": "4.6.4"
   },
   "scripts": {
     "build": "rm -rf dist/current && rollup -c",
     "watch": "rollup -c -w",
-    "dev": "npm-run-all --parallel start watch",
-    "start": "live-server --verbose --no-browser --cors dist/",
-    "pretest": "NODE_ENV=test npm run build",
+    "serve": "live-server --verbose --no-browser --cors dist/",
+    "start": "npm-run-all --parallel watch serve",
+    "pretest": "NODE_ENV=ci npm run build",
     "test": "cat dist/current/*.js dist/current/*/*.js | browser-run --static ./dist/ | tee test.log | grep -v '^:cov ' | npx tap-spec",
     "predocs": "cd node_modules/documentation && npm install",
     "docs": "documentation build 'kernel/**.js' 'lib/**.js' 'cmd/**.js' -f html -o docs"

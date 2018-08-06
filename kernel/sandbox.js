@@ -1,12 +1,18 @@
-// @flow
+// @flow strict
 /* eslint-disable func-names, no-multi-assign */
 export default class Sandbox {
-  constructor (id, path) {
+  path: string
+
+  iframe: ?HTMLIFrameElement
+
+  window: ?WindowProxy
+
+  constructor (id: string, path: string) {
     this.path = path
 
     const iframe = (this.iframe = document.createElement('iframe'))
     iframe.id = id
-    iframe.sandbox = 'allow-scripts'
+    iframe.sandbox.add('allow-scripts')
     iframe.style.display = 'none'
 
     // eslint-disable-next-line no-shadow
@@ -20,8 +26,7 @@ export default class Sandbox {
               type: 'application/javascript',
             })
             const worker = new window.Worker(window.URL.createObjectURL(blob), { name })
-            worker.onerror = err =>
-              window.onerror(err.message, err.filename, `${err.lineno}:${err.colno}`)
+            worker.onerror = err => window.onerror(err.message, err.filename, `${err.lineno}:${err.colno}`)
             worker.onmessage = (evt) => {
               if (evt.isTrusted && typeof evt === 'object') {
                 if (evt.data === 'PONG') {
@@ -36,12 +41,20 @@ export default class Sandbox {
             setInterval(() => {
               worker.postMessage('PING')
               if (Date.now() - window.lastPong > 2000) {
-                window.console.error(`${name}(${path}) failed PING/PONG reply since ${window.lastPong}`)
+                // eslint-disable-next-line max-len
+                window.console.error(
+                  `${name}(${path}) failed PING/PONG reply since ${window.lastPong}`
+                )
                 window.parent.postMessage('TERMINATE', origin)
               }
             }, 1000)
             window.onmessage = (evt) => {
-              if (evt.isTrusted && evt.origin === origin && typeof evt === 'object' && typeof evt.data === 'object') {
+              if (
+                evt.isTrusted &&
+                evt.origin === origin &&
+                typeof evt === 'object' &&
+                typeof evt.data === 'object'
+              ) {
                 if (window.msgQueue) {
                   if (evt.data.type === 'INIT') {
                     const { msgQueue } = window
@@ -75,12 +88,12 @@ export default class Sandbox {
       window.parent.postMessage({ type: 'READ', path, id: 'source' }, origin)
     }.toString()})('${window.location.origin}', '${id}', '${path}')</script>`
 
-    document.body.appendChild(iframe)
+    document.body && document.body.appendChild(iframe)
     this.window = iframe.contentWindow
   }
 
   terminate () {
-    document.body.removeChild(this.iframe)
+    this.iframe && document.body && document.body.removeChild(this.iframe)
     this.iframe = null
     this.window = null
   }
