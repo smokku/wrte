@@ -1,4 +1,4 @@
-// @flow strict
+// @flow
 import test from '../lib/tape'
 import main from './main'
 

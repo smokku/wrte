@@ -1,4 +1,4 @@
-// @flow strict
+// @flow
 /* eslint-disable no-underscore-dangle */
 import test from '../lib/tape'
 import { spawn } from './proc'
@@ -12,6 +12,10 @@ export type Rect = {
   height: number,
 }
 
+/**
+ * Creates application _Window_ visible to the user.
+ * Handles interactions by emitting events.
+ */
 export default class Window extends EventEmitter {
   _frame: HTMLIFrameElement
 
@@ -63,8 +67,8 @@ export default class Window extends EventEmitter {
         this._content.style.overflow = 'auto'
         this._content.style.border = 'none'
         this._content.style.outline = 'none'
-        this._body.onkeypress = this.onKeyPress.bind(this)
-        this._body.onfocus = () => this._frame.focus()
+        this._body.addEventListener('keypress', this.onKeyPress.bind(this))
+        this._body.addEventListener('focus', () => this._frame.focus())
         this._body.appendChild(this._content)
       }
     }

@@ -1,21 +1,22 @@
 // @flow
 import test from '../lib/tape'
 
-import type { Message, Channel, Handler } from './types'
-import type { Process } from './proc'
+import type { Message, Channel, Handler } from './ipc'
+import type { Process, Pid } from './proc'
 
 import {
   spawn, getProcessForWindow, getProcess, sanitizeArgv,
 } from './proc'
 import { errorReply, makeReply } from './ipc'
+import { VOLUME_NAME_REGEXP, MAX_ASSIGN_RESOLVE_ATTEMPTS } from './tunables'
 
 import { init as consoleInit, handler as consoleHandler } from './internal/console'
 import { init as windowInit, handler as windowHandler } from './internal/window'
 
 import webdav from './vfs/webdav'
 
-const mounts: {| [string]: Handler |} = (Object.create(null): any)
-const assigns: {| [string]: string |} = (Object.create(null): any)
+const mounts: Map<Volume, Handler> = new Map()
+const assigns: Map<Path, Path> = new Map()
 
 const internal = {
   console: [consoleHandler],
@@ -116,7 +117,7 @@ export default function init () {
             channel.handler = handler
             channel.path = path
             channel.send = function send (msg: Message) {
-              global.console.log('>>>>>>>>>>', msg)
+              global.console.log('>>>>>>>>>>', msg) // FIXME: implement!
             }
             from.postMessage(
               makeReply(
@@ -159,31 +160,51 @@ export default function init () {
   })
 }
 
-function checkVolumeName (volume: ?string): boolean %checks {
-  return typeof volume === 'string' && !!volume.match(/^[a-z0-9]+$/)
+export type Path = string
+export type Volume = string
+
+/**
+ * Checks if volume name is valid.
+ *
+ * @param volume - _Volume_ name.
+ * @returns Boolean.
+ */
+function checkVolumeName (volume: ?Volume): boolean %checks {
+  return typeof volume === 'string' && !!volume.match(new RegExp(`^${VOLUME_NAME_REGEXP}$`))
 }
 
-export function mount (volume: string, handler: string | Handler, argv: Array<mixed> = []) {
+/**
+ * Mounts a _Process_ or `internal:` handler on _VFS_ volume.
+ *
+ * _VFS_ volume can be handled either by spawning a dedicated process
+ * processing messages sent to _VFS_ paths or by handler function
+ * provided internally ba kernel.
+ *
+ * @param volume - _Volume_ name.
+ * @param handler - _Path_ to process content or handler function.
+ * @param argv - Array of arguments.
+ */
+export function mount (volume: Volume, handler: Path | Handler, argv: Array<mixed> = []) {
   if (checkVolumeName(volume)) {
-    if (mounts[volume]) {
+    if (mounts.has(volume)) {
       throw new Error(`${volume} is already mounted`)
     }
 
-    console.debug(
+    window.console.debug(
       `Mounting ${volume}: ${
         typeof handler === 'string' ? `"${handler}"` : typeof handler
       } ${JSON.stringify(sanitizeArgv(argv))}`
     )
     switch (typeof handler) {
       case 'function':
-        mounts[volume] = function fn (to: Pid | Channel, from: Process, msg: Message) {
+        mounts.set(volume, function fn (to: Pid | Channel, from: Process, msg: Message) {
           // process in next "tick", to make it similar to process handler type
           // and break deep/cyclic stack trace
           setTimeout(() => ((handler: any): Handler).call(this, to, from, msg), 0)
-        }
+        })
         break
       case 'string':
-        mounts[volume] = function pr (to: Pid | Channel, from: Process, msg: Message) {
+        mounts.set(volume, function prc (to: Pid | Channel, from: Process, msg: Message) {
           const proc = this.pid && getProcess(this.pid)
           if (proc) {
             const message: Message = {
@@ -205,7 +226,7 @@ export function mount (volume: string, handler: string | Handler, argv: Array<mi
         }.bind({
           pid: spawn(handler, argv),
           argv,
-        })
+        }))
         break
       default:
         throw new Error('unimplemented')
@@ -213,17 +234,37 @@ export function mount (volume: string, handler: string | Handler, argv: Array<mi
   }
 }
 
-export function unmount (volume: string) {
+/**
+ * Unmounts _Volume handler.
+ *
+ * @param volume - _Volume_ name.
+ */
+export function unmount (volume: Volume) {
   if (checkVolumeName(volume)) {
     throw new Error('unimplemented')
   }
 }
 
+/**
+ * List all mounts and handlers.
+ */
 export function getMounts () {
   throw new Error('unimplemented')
 }
 
-export function assign (source: string, dest: string) {
+/**
+ * Create a mapping from one _Path_ to another _Path_.
+ *
+ * _VFS_ will replace source part of _Path_ with dest, every time
+ * it resolves a _Path_ - keeping the part that does not match.
+ * This allows mapping a part of _VFS_ tree under other _Path_,
+ * including shadowing already existing _VFS_ trees.
+ *
+ * @param source - Part of _Path_ to be replaced.
+ * @param dest - _Path_ replacement.
+ * @returns - Success boolean.
+ */
+export function assign (source: Path, dest: Path): boolean {
   const sourceParts = splitPath(source.toString())
   const destParts = splitPath(dest.toString())
   if (sourceParts.length === 2 && destParts.length === 2) {
@@ -231,29 +272,50 @@ export function assign (source: string, dest: string) {
     destParts[1] = normalizePath(destParts[1])
     source = sourceParts.join(':')
     dest = destParts.join(':')
-    console.debug(`Assigning ${source} "${dest}"`)
-    assigns[source] = dest
+    window.console.debug(`Assigning ${source} "${dest}"`)
+    assigns.set(source, dest)
     return true
   }
   return false
 }
 
-export function unassign (source: string) {
-  console.debug(`Unassigning ${source}`)
-  delete assigns[source.toString()]
+/**
+ * Removes an assign.
+ *
+ * @param source - _Assign_ source part of _Path_.
+ */
+export function unassign (source: Path) {
+  window.console.debug(`Unassigning ${source}`)
+  assigns.delete(source)
 }
 
-export function getAssigns (): Array<[string, string]> {
-  return Object.keys(assigns).map(from => [from, assigns[from]])
+/**
+ * List all _Assign_s.
+ *
+ * @returns Array of [source, dest] _Path_ parts.
+ */
+export function getAssigns (): Array<[Path, Path]> {
+  return [...assigns.entries()]
 }
 
-export function resolvePath (full: string): [?Handler, string] {
+/**
+ * Map a _Path_ to its _Handler_.
+ * @param full - _Path_ string.
+ * @returns Array of [_Handler_, normalized_Path_].
+ */
+export function resolvePath (full: Path): [?Handler, Path] {
   const [volume, path] = splitPath(full)
-  return [(checkVolumeName(volume) && mounts[volume]) || undefined, normalizePath(path)]
+  return [(checkVolumeName(volume) && mounts.get(volume)) || undefined, normalizePath(path)]
 }
 
-export function splitPath (full: string): [?string, string] {
-  const match = full.match(/^[a-z0-9]+:/)
+/**
+ * Split _Path_ to _Volume_ part and rest.
+ *
+ * @param full - _Path_ to split.
+ * @returns Array of [Volume, rest] parts.
+ */
+export function splitPath (full: Path): [?Volume, Path] {
+  const match = full.match(new RegExp(`^${VOLUME_NAME_REGEXP}:`))
   let volume
   let path
   if (match) {
@@ -266,7 +328,14 @@ export function splitPath (full: string): [?string, string] {
   return [volume, path]
 }
 
-export function normalizePath (path: string) {
+/**
+ * Normalizes a _Path_ removing repeating directory separators,
+ * resolving `.` and `..` references, and leading and trailing separators.
+ *
+ * @param path - _Path_ to normalize.
+ * @returns Resolved _Path_.
+ */
+export function normalizePath (path: Path) {
   path = `/${path}/`
   path = path.replace(/\/+/g, '/') // compress all //
   while (path.indexOf('/./') !== -1) {
@@ -281,16 +350,28 @@ export function normalizePath (path: string) {
   return path
 }
 
-export function resolveAssigns (path: string) {
-  const unmatched = Object.assign(Object.create(null), assigns)
+/**
+ * Pass _Path_ over _Assign_s mapping resolving all _Assign_s.
+ * Possibly multiple times (until reaching MAX_ASSIGN_RESOLVE_ATTEMPTS).
+ *
+ * @param path - _Path_ to resolve.
+ * @returns Resolved and normalized _Path_.
+ */
+export function resolveAssigns (path: Path): Path {
+  const unmatched = new Map(assigns)
+  let attempts = 0
   let matched
   do {
     matched = false
-    // eslint-disable-next-line no-restricted-syntax, guard-for-in
-    for (const ass in unmatched) {
-      if (path.startsWith(ass)) {
-        path = normalizePath([unmatched[ass], normalizePath(path.slice(ass.length))].join('/'))
-        delete unmatched[ass]
+    attempts += 1
+    if (attempts > MAX_ASSIGN_RESOLVE_ATTEMPTS) {
+      throw new Error(`Maximum resolveAssign resolution attempts (${MAX_ASSIGN_RESOLVE_ATTEMPTS}) reached.`)
+    }
+    // eslint-disable-next-line no-restricted-syntax
+    for (const [from, dest] of unmatched.entries()) {
+      if (path.startsWith(from)) {
+        path = normalizePath([dest, normalizePath(path.slice(from.length))].join('/'))
+        unmatched.delete(from)
         matched = true
         break
       }
@@ -323,6 +404,7 @@ test('normalizePath', (t) => {
     t.equal(normalizePath('foo.bar'), 'foo.bar')
     t.equal(normalizePath('/.foo/'), '.foo')
     t.equal(normalizePath('/foo./'), 'foo.')
+    t.equal(normalizePath('/.../foo/'), '.../foo')
     t.end()
   })
 

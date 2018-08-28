@@ -1,9 +1,10 @@
+// @flow strict
+/* eslint-disable unicorn/prefer-add-event-listener */
 let init = null
 const channels = {}
 const queue = []
 
 const CONSOLE = 'con:'
-const WINDOW = 'win:'
 
 global.console.log('[logger] starting')
 
@@ -21,18 +22,6 @@ global.onmessage = (evt) => {
     global.postMessage({
       type: 'OPEN',
       path: CONSOLE,
-    })
-    global.postMessage({
-      type: 'OPEN',
-      path: WINDOW,
-      payload: {
-        position: {
-          x: 20,
-          y: 10,
-          width: 200,
-          height: 100,
-        },
-      },
     })
   } else if (data.type === 'CHANNEL' && data.path) {
     channels[data.path] = data.channel
@@ -55,11 +44,15 @@ global.onmessage = (evt) => {
   }
 }
 
-function logPayload (payload) {
+/**
+ * Helper function to log argument as payload to console.
+ *
+ * @param payload - Stuff to log.
+ */
+function logPayload (payload: {} | string) {
   global.postMessage({
     channel: channels[CONSOLE],
     type: 'DATA',
     payload,
-    severity: 'NORMAL',
   })
 }

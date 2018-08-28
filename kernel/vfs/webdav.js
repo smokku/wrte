@@ -1,10 +1,17 @@
-// @flow strict
+// @flow
+/* eslint-disable unicorn/prefer-add-event-listener */
 /**
  * WebWorker code for `internal:webdav` VFS in-process handler.
  */
 export default function () {
   let init
 
+  /**
+   * Creates URL for requested `webdav:` VFS path.
+   *
+   * @param path - _Path_ to map.
+   * @returns URL string.
+   */
   function buildUrl (path) {
     const { argv } = init
     const schema = argv.secure ? 'https' : 'http'

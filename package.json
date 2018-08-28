@@ -50,8 +50,9 @@
     "watch": "rollup -c -w",
     "serve": "live-server --verbose --no-browser --cors dist/",
     "start": "npm-run-all --parallel watch serve",
-    "pretest": "NODE_ENV=ci npm run build",
-    "test": "cat dist/current/*.js dist/current/*/*.js | browser-run --static ./dist/ | tee test.log | grep -v '^:cov ' | npx tap-spec",
+    "lint": "eslint '{kernel,lib,cmd,test}/**.js'",
+    "pretest": "npm run lint && flow check && NODE_ENV=test npm run build",
+    "test": "NODE_ENV=test cat dist/current/*.js dist/current/*/*.js | browser-run --static ./dist/ | tee test.log | grep -v '^:cov ' | npx tap-spec",
     "predocs": "cd node_modules/documentation && npm install",
     "docs": "documentation build 'kernel/**.js' 'lib/**.js' 'cmd/**.js' -f html -o docs"
   }

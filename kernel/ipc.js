@@ -5,12 +5,12 @@ import type { Process, Pid } from './proc'
 
 import { getProcess, getProcessForWindow, spawn } from './proc'
 
-export type MessageType = 'INIT' | 'ERROR' | 'DATA' | 'CHANNEL'
+export type MessageType = 'INIT' | 'ERROR' | 'DATA' | 'CHANNEL' | 'EVENT'
 
 export type Message = {
   type: MessageType,
   id?: string,
-  payload?: {} | string | ArrayBuffer,
+  payload?: string | Object | ArrayBuffer,
   process?: Pid | null,
   path?: string | null,
   channel?: Cid,
@@ -78,8 +78,8 @@ export type Channel = {
   endpoint?: Pid,
   path?: string,
   onTerminate?: () => void,
-  handler?: Handler, // eslint-disable-line no-use-before-define
-  meta?: {},
+  handler?: Handler,
+  meta?: Object,
   send?: (msg: Message) => void,
 }
 
@@ -137,6 +137,8 @@ export default function init () {
           dest = getProcess(process)
 
           if (dest && data.type === 'OPEN') {
+            const fromProcess = from
+            const destProcess = dest
             const destChan = dest.openChannel()
             const fromChan = from.openChannel()
             destChan.pid = from.pid
@@ -145,8 +147,8 @@ export default function init () {
             fromChan.endpoint = destChan.id
             notifyNewChannel(dest, destChan.id, destChan.pid)
             notifyNewChannel(from, fromChan.id, fromChan.pid)
-            destChan.onTerminate = () => notifyNewChannel(from, fromChan.id, null)
-            fromChan.onTerminate = () => notifyNewChannel(dest, destChan.id, null)
+            destChan.onTerminate = () => notifyNewChannel(fromProcess, fromChan.id, null)
+            fromChan.onTerminate = () => notifyNewChannel(destProcess, destChan.id, null)
             return
           }
         }
@@ -155,7 +157,7 @@ export default function init () {
           const fromChan = from.getChannel(channel)
           if (fromChan) {
             if (typeof fromChan.handler === 'function' && typeof fromChan.path === 'string') {
-              fromChan.handler(fromChan.path, from, msg, fromChan)
+              fromChan.handler(fromChan, from, msg)
               return
             }
 
@@ -163,18 +165,18 @@ export default function init () {
               const destProcess = getProcess(fromChan.pid)
 
               if (data.type === 'CLOSE') {
-                if (destProcess) {
+                if (destProcess && fromChan.endpoint) {
                   destProcess.closeChannel(fromChan.endpoint)
                 }
                 from.closeChannel(fromChan.id)
                 notifyNewChannel(from, fromChan.id, null)
-                if (destProcess) {
+                if (destProcess && fromChan.endpoint) {
                   notifyNewChannel(destProcess, fromChan.endpoint, null)
                 }
                 return
               }
 
-              if (destProcess) {
+              if (destProcess && fromChan.endpoint) {
                 const destChan = destProcess.getChannel(fromChan.endpoint)
                 if (destChan.pid === from.pid && destChan.endpoint === fromChan.id) {
                   dest = destProcess
