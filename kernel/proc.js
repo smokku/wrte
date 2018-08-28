@@ -7,8 +7,7 @@ import EventEmitter from './event-emitter'
 import Sandbox from './sandbox'
 import id from '../lib/id'
 
-// FIXME: replace with Map()
-const processes: {| [string]: Process |} = (Object.create(null): any)
+const processes: Map<Pid, Process> = new Map()
 
 /**
  * PROC init()ialization.
@@ -52,6 +51,8 @@ const PROCESS_STATUS = Symbol('status')
 /// _Process_ ID
 export type Pid = string
 export type ProcessStatus = 'SPAWNING' | 'RUNNING' | 'TERMINATING' | 'TERMINATED'
+
+export type Capability = 'spawn' | 'mount' | 'window:text' | 'window:canvas'
 
 /**
  * Process class.
@@ -134,8 +135,8 @@ export class Process extends EventEmitter {
  * @param pid - _Process_ ID.
  * @returns _Process_.
  */
-export function getProcess (pid: Pid): ?Process {
-  return pid ? processes[pid] : null
+export function getProcess (pid: ?Pid): Process | null {
+  return (pid && processes.get(pid)) || null
 }
 
 /**
@@ -143,9 +144,12 @@ export function getProcess (pid: Pid): ?Process {
  * @param window - Sandbox iframe window reference.
  * @returns _Process_.
  */
-export function getProcessForWindow (window: WindowProxy): ?Process {
-  const pid = Object.keys(processes).find(p => processes[p].sandbox.window === window)
-  return pid ? getProcess(pid) : null
+export function getProcessForWindow (window: WindowProxy): Process | null {
+  // eslint-disable-next-line no-restricted-syntax
+  for (const [pid, p] of processes.entries()) {
+    if (p.sandbox.window === window) return getProcess(pid)
+  }
+  return null
 }
 
 export type ArgV = Array<mixed>
@@ -164,12 +168,13 @@ export function spawn (path: string, argv: ArgV = []): Pid | null {
   global.console.log(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
 
   let pid = id()
-  while (Object.prototype.hasOwnProperty.call(processes, pid)) pid = id()
+  while (processes.has(pid)) pid = id()
 
-  processes[pid] = new Process(pid, path.toString(), [].concat(argv))
-  processes[pid].on('status', (status) => {
+  const process = new Process(pid, path.toString(), [].concat(argv))
+  processes.set(pid, process)
+  process.on('status', (status) => {
     if (status === 'TERMINATED') {
-      delete processes[pid]
+      processes.delete(pid)
       global.console.log(`Terminated "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
     }
   })
@@ -208,7 +213,7 @@ export type ProcessInfo = {
  * @returns Process information array.
  */
 export function ps (): Array<ProcessInfo> {
-  return Object.values(processes).map(({
+  return [...processes.values()].map(({
     pid, path, argv, status,
   }: any) => ({
     pid,

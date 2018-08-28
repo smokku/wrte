@@ -1,4 +1,5 @@
 // @flow strict
+/* eslint-disable unicorn/prefer-add-event-listener */
 
 /**
  * This test works like this:
@@ -36,7 +37,7 @@ global.onmessage = (evt) => {
       })
     }
     setTimeout(() => {
-      global.console.error('[test/channel] TEST FAILED!')
+      global.console.error('[test/channel] 😞 TEST FAILURE!')
       global.close()
     }, 1000)
   } else if (type === 'CHANNEL' && typeof data.channel === 'string') {
@@ -53,7 +54,7 @@ global.onmessage = (evt) => {
       const channel = channels[data.channel]
       if (channel) {
         if (!dest) {
-          global.console.log('[test/channel] TEST SUCCESS')
+          global.console.info('[test/channel] 👌 TEST SUCCESS')
         }
         global.postMessage('TERMINATE')
       }
@@ -76,7 +77,7 @@ global.onmessage = (evt) => {
         global.postMessage('TERMINATE')
         return
       default:
-        global.console.error('[test/channel] TEST FAILED!')
+        global.console.error('[test/channel] 😞 TEST FAILURE!')
         global.close()
         return
     }

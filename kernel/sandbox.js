@@ -1,5 +1,19 @@
 // @flow strict
-/* eslint-disable func-names, no-multi-assign */
+/* eslint-disable func-names, no-multi-assign, unicorn/prefer-add-event-listener */
+
+declare class DOMException {
+  +message: string;
+  +name: string;
+  constructor(message: string, name: string): void;
+}
+
+/**
+ * _Process_ _Sandbox_ is responsible for launching an untrusted process
+ * in WebWorker thread and jailing it in IFrame sandbox.
+ * This restricts what a _Process_ can do to what is allowed to WebWorker
+ * thread (not much besides web access) and what is accessible by sending
+ * and receiving messages from the kernel (and indirectly other _Process_es).
+ */
 export default class Sandbox {
   path: string
 
@@ -15,7 +29,7 @@ export default class Sandbox {
     iframe.sandbox.add('allow-scripts')
     iframe.style.display = 'none'
 
-    // eslint-disable-next-line no-shadow
+    // eslint-disable-next-line no-shadow, // $FlowFixMe - declared srcDoc instead srcdoc
     iframe.srcdoc = `<script>(${function (origin, name, path) {
       window.msgQueue = []
       window.onmessage = (msg) => {
@@ -90,6 +104,19 @@ export default class Sandbox {
 
     document.body && document.body.appendChild(iframe)
     this.window = iframe.contentWindow
+
+    /* test whether iframe sandbox actually works */
+    let sandboxTestPassed = false
+    try {
+      this.window.document // eslint-disable-line no-unused-expressions
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'SecurityError') {
+        sandboxTestPassed = true
+      }
+    }
+    if (!sandboxTestPassed) {
+      throw new DOMException(`${id}(${path}) IFrame sandbox does not work`, 'SecurityError')
+    }
   }
 
   terminate () {
