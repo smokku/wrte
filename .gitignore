@@ -4,3 +4,4 @@
 /docs/
 /.vscode/
 /test.log
+/.nyc_output/

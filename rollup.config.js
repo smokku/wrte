@@ -13,7 +13,7 @@ const babelConfig = {
 }
 if (production) {
   babelConfig.plugins = [
-    ['discard-module-references', { targets: ['./lib/tape', '../lib/tape', '../../lib/tape'] }],
+    ['discard-module-references', { targets: ['./test/tape', '../test/tape', '../../test/tape'] }],
   ]
 }
 
@@ -49,14 +49,15 @@ if (!production) {
 }
 
 export default Object.keys(entries).reduce(
-  (configs, entry) =>
-    configs.concat(Object.assign({}, baseConfig, {
+  (configs, entry) => configs.concat(
+    Object.assign({}, baseConfig, {
       input: entry,
       output: Object.assign(
         {},
         baseConfig.output,
         typeof entries[entry] === 'object' ? entries[entry] : { file: entries[entry] }
       ),
-    })),
+    })
+  ),
   []
 )

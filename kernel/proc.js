@@ -1,5 +1,5 @@
 // @flow
-import test from '../lib/tape'
+import test from '../test/tape'
 
 import type { Message, Channel } from './ipc'
 

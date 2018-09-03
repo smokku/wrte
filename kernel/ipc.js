@@ -1,9 +1,7 @@
 // @flow
-import test from '../lib/tape'
-
 import type { Process, Pid } from './proc'
 
-import { getProcess, getProcessForWindow, spawn } from './proc'
+import { getProcess, getProcessForWindow } from './proc'
 
 export type MessageType = 'INIT' | 'ERROR' | 'DATA' | 'CHANNEL' | 'EVENT'
 
@@ -203,10 +201,3 @@ export default function init () {
     }
   })
 }
-
-test('channel', (t) => {
-  const other = spawn(`${window.location.origin}/current/test/channel.js`)
-  t.ok(other)
-  spawn(`${window.location.origin}/current/test/channel.js`, [other])
-  t.end()
-})
