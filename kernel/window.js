@@ -1,8 +1,5 @@
 // @flow
 /* eslint-disable no-underscore-dangle */
-import test from '../lib/tape'
-import { spawn } from './proc'
-
 import EventEmitter from './event-emitter'
 
 export type Rect = {
@@ -113,9 +110,3 @@ export default class Window extends EventEmitter {
     this.emit('key', key)
   }
 }
-
-test('window', (t) => {
-  const win = spawn(`${window.location.origin}/current/test/window.js`)
-  t.ok(win)
-  t.end()
-})

@@ -1,5 +1,5 @@
 [ignore]
-<PROJECT_ROOT>/node_modules/.*
+<PROJECT_ROOT>/node_modules/bcryptjs/.*
 <PROJECT_ROOT>/dist/.*
 
 [include]
