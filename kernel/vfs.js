@@ -1,5 +1,5 @@
 // @flow
-import test from '../lib/tape'
+import test from '../test/tape'
 
 import type { Message, Channel, Handler } from './ipc'
 import type { Process, Pid } from './proc'
@@ -204,29 +204,32 @@ export function mount (volume: Volume, handler: Path | Handler, argv: Array<mixe
         })
         break
       case 'string':
-        mounts.set(volume, function prc (to: Pid | Channel, from: Process, msg: Message) {
-          const proc = this.pid && getProcess(this.pid)
-          if (proc) {
-            const message: Message = {
-              ...msg,
-              process: from.pid,
-            }
-            if (typeof to === 'string') {
-              message.path = to
-              proc.postMessage(message)
-            } else if (typeof to === 'object') {
-              message.channel = to.id
-              proc.postMessage(message)
+        mounts.set(
+          volume,
+          function prc (to: Pid | Channel, from: Process, msg: Message) {
+            const proc = this.pid && getProcess(this.pid)
+            if (proc) {
+              const message: Message = {
+                ...msg,
+                process: from.pid,
+              }
+              if (typeof to === 'string') {
+                message.path = to
+                proc.postMessage(message)
+              } else if (typeof to === 'object') {
+                message.channel = to.id
+                proc.postMessage(message)
+              } else {
+                from.postMessage(errorReply('EINVAL', msg))
+              }
             } else {
-              from.postMessage(errorReply('EINVAL', msg))
+              from.postMessage(errorReply('ESRCH', msg))
             }
-          } else {
-            from.postMessage(errorReply('ESRCH', msg))
-          }
-        }.bind({
-          pid: spawn(handler, argv),
-          argv,
-        }))
+          }.bind({
+            pid: spawn(handler, argv),
+            argv,
+          })
+        )
         break
       default:
         throw new Error('unimplemented')
@@ -365,7 +368,9 @@ export function resolveAssigns (path: Path): Path {
     matched = false
     attempts += 1
     if (attempts > MAX_ASSIGN_RESOLVE_ATTEMPTS) {
-      throw new Error(`Maximum resolveAssign resolution attempts (${MAX_ASSIGN_RESOLVE_ATTEMPTS}) reached.`)
+      throw new Error(
+        `Maximum resolveAssign resolution attempts (${MAX_ASSIGN_RESOLVE_ATTEMPTS}) reached.`
+      )
     }
     // eslint-disable-next-line no-restricted-syntax
     for (const [from, dest] of unmatched.entries()) {
