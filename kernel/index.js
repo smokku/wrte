@@ -13,14 +13,6 @@ window.addEventListener('load', main)
 
 test.onFinish(() => {
   window.console.log('All tests finished')
-  if (process.env.NODE_ENV === 'test') {
-    // eslint-disable-next-line no-underscore-dangle
-    Object.values(window.__coverage__).forEach((cov) => {
-      if (cov && typeof cov === 'object' && typeof cov.path === 'string') {
-        window.console.log(':cov', cov.hash, JSON.stringify({ [cov.path]: cov }))
-      }
-    })
-    window.console.log('Closing window')
-    window.close()
-  }
+  // eslint-disable-next-line no-underscore-dangle
+  window.__tests_done__ = true
 })
