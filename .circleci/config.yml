@@ -40,9 +40,6 @@ jobs:
           name: Code coverage report
           command: |
             sudo npm install -g codeclimate-test-reporter codecov
-            rm -rf .nyc_output
-            mkdir -p .nyc_output
-            grep '^:cov ' test.log | bash -c 'while read COV HASH OBJECT; do echo $OBJECT > .nyc_output/$HASH.json; done'
             npx nyc report --reporter=text-lcov > coverage.lcov
             codeclimate-test-reporter < coverage.lcov
             codecov
