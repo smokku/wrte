@@ -2,7 +2,7 @@
   "name": "WRTE",
   "version": "0.0.1",
   "description": "Web RunTime Environment",
-  "main": "kernel/main.js",
+  "main": "test/runner.js",
   "repository": "https://github.com/smokku/wrte.git",
   "author": "Tomasz Sterna <smoku@xiaoka.com>",
   "license": "AGPL-3.0",
@@ -30,6 +30,7 @@
     "fs-extra": "7.0.0",
     "git-rev-sync": "1.12.0",
     "live-server": "1.2.0",
+    "nodemon": "1.18.4",
     "npm-run-all": "4.1.3",
     "nyc": "13.0.1",
     "puppeteer-core": "1.7.0",
@@ -38,7 +39,8 @@
     "rollup-plugin-replace": "2.0.0",
     "rollup-plugin-root-import": "0.2.3",
     "tap-junit": "2.1.0",
-    "tap-spec": "5.0.0"
+    "tap-spec": "5.0.0",
+    "tape": "4.9.1"
   },
   "dependencies": {
     "tape-rollup": "4.6.4"
@@ -50,8 +52,11 @@
     "start": "npm-run-all --parallel watch serve",
     "lint": "eslint '{kernel,lib,cmd,test}/**.js'",
     "flow": "flow check",
-    "pretest": "npm-run-all --parallel lint flow && NODE_ENV=test npm run build",
-    "test": "node test/runner.js | tee test.log | grep -v '^:cov ' | tap-spec",
+    "check": "npm-run-all --parallel lint flow",
+    "tap": "node test/runner.js | tap-spec",
+    "tap:log": "node test/runner.js | tee test.log | tap-spec",
+    "test": "NODE_ENV=test npm-run-all --serial check build tap:log",
+    "test:watch": "NODE_ENV=test nodemon -w kernel -w lib -w cmd -w test --exec npm-run-all --serial build tap",
     "predocs": "cd node_modules/documentation && npm install",
     "docs": "documentation build 'kernel/**.js' 'lib/**.js' 'cmd/**.js' -f html -o docs"
   }

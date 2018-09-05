@@ -1,9 +1,10 @@
 // @flow
-/* eslint-disable global-require, no-console, unicorn/no-process-exit */
+/* eslint-disable global-require, no-console, max-len, unicorn/no-process-exit */
 (async () => {
   const puppeteer = require('puppeteer-core')
   const liveServer = require('live-server')
   const fs = require('fs-extra')
+  const test = require('tape')
 
   const { HEADFUL = false, CHROME_BIN } = process.env
 
@@ -31,24 +32,38 @@
   await page.goto(URL)
   await page.waitForFunction('window.__tests_done__')
 
-  /* fetch coverage */
-  // eslint-disable-next-line no-underscore-dangle
-  const coverage = await page.evaluate(() => window.__coverage__)
-  await fs.emptyDir('.nyc_output')
-  await Promise.all(
-    Object.values(coverage).map((cov) => {
-      if (
-        cov &&
-        typeof cov === 'object' &&
-        typeof cov.path === 'string' &&
-        typeof cov.hash === 'string'
-      ) {
-        return fs.writeJson(`.nyc_output/${cov.hash}.json`, { [cov.path]: cov })
-      }
-      return Promise.resolve()
-    })
-  )
+  /* functional tests */
+  test('channel', async (t) => {
+    const pid1 = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`))
+    t.ok(pid1)
+    t.ok(typeof pid1 === 'string')
+    const pid2 = await page.evaluate(other => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`, [other]), pid1)
+    t.ok(pid2)
+    t.ok(typeof pid2 === 'string')
+    t.end()
+  })
 
-  await browser.close()
-  ls.close(process.exit)
+  test.onFinish(async () => {
+    /* fetch coverage */
+    // eslint-disable-next-line no-underscore-dangle
+    const coverage = await page.evaluate(() => window.__coverage__)
+    await fs.emptyDir('.nyc_output')
+    await Promise.all(
+      Object.values(coverage).map((cov) => {
+        if (
+          cov &&
+          typeof cov === 'object' &&
+          typeof cov.path === 'string' &&
+          typeof cov.hash === 'string'
+        ) {
+          return fs.writeJson(`.nyc_output/${cov.hash}.json`, { [cov.path]: cov })
+        }
+        return Promise.resolve()
+      })
+    )
+
+    console.log('All testing done - closing browser')
+    await browser.close()
+    ls.close(process.exit)
+  })
 })()

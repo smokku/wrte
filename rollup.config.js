@@ -48,14 +48,14 @@ if (!production) {
   entries['test/channel.js'] = 'dist/current/test/channel.js'
 }
 
-export default Object.keys(entries).reduce(
-  (configs, entry) => configs.concat(
+export default Object.entries(entries).reduce(
+  (configs, [path, entry]) => configs.concat(
     Object.assign({}, baseConfig, {
-      input: entry,
+      input: path,
       output: Object.assign(
         {},
         baseConfig.output,
-        typeof entries[entry] === 'object' ? entries[entry] : { file: entries[entry] }
+        typeof entry === 'object' ? entry : { file: entry }
       ),
     })
   ),
