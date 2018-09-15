@@ -3,8 +3,8 @@
 (async () => {
   const puppeteer = require('puppeteer-core')
   const liveServer = require('live-server')
-  const fs = require('fs-extra')
   const test = require('tape')
+  const fs = require('fs-extra')
 
   const { HEADFUL = false, CHROME_BIN } = process.env
 
@@ -12,6 +12,11 @@
     const server = liveServer.start({
       root: 'dist/',
       open: false,
+      middleware: [
+        require('cors')({
+          origin: true,
+        }),
+      ],
     })
     server.addListener('listening', (/* e */) => {
       resolve(server)
@@ -37,14 +42,19 @@
     const pid1 = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`))
     t.ok(pid1)
     t.ok(typeof pid1 === 'string')
-    const pid2 = await page.evaluate(other => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`, [other]), pid1)
+    const pid2 = await page.evaluate(
+      other => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`, [other]),
+      pid1
+    )
     t.ok(pid2)
     t.ok(typeof pid2 === 'string')
+    const workers = await page.workers()
+    t.ok(workers.length > 0)
     t.end()
   })
 
+  /* fetch coverage */
   test.onFinish(async () => {
-    /* fetch coverage */
     // eslint-disable-next-line no-underscore-dangle
     const coverage = await page.evaluate(() => window.__coverage__)
     await fs.emptyDir('.nyc_output')

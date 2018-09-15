@@ -4,7 +4,14 @@
   "env": {
     "test": {
       "plugins": [
-        "istanbul"
+        ["istanbul", {
+          "exclude": [
+            "**/node_modules/**",
+            "test/**",
+            "kernel/vfs/**",
+            "kernel/sandbox.js"
+          ]
+        }]
       ]
     }
   }
