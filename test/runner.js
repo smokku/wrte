@@ -1,11 +1,29 @@
 // @flow
-/* eslint-disable global-require, no-console, max-len, unicorn/no-process-exit */
-(async () => {
-  const puppeteer = require('puppeteer-core')
-  const liveServer = require('live-server')
-  const test = require('tape')
-  const fs = require('fs-extra')
+/* eslint-disable no-console, max-len, no-shadow, unicorn/no-process-exit */
+const puppeteer = require('puppeteer-core')
+const liveServer = require('live-server')
+const cors = require('cors')
+const test = require('tape')
+const fs = require('fs-extra')
 
+/**
+ * Wait for console message.
+ * @param frame - Frame object.
+ * @param message - Text to match.
+ * @returns Promise.
+ */
+function waitForMessage (frame, message) {
+  return new Promise((resolve, reject) => {
+    frame.on('console', (msg) => {
+      const match = msg.text().match(message)
+      if (match) {
+        resolve(match)
+      }
+    })
+  })
+}
+
+(async () => {
   const { HEADFUL = false, CHROME_BIN } = process.env
 
   const ls = await new Promise((resolve, reject) => {
@@ -13,7 +31,7 @@
       root: 'dist/',
       open: false,
       middleware: [
-        require('cors')({
+        cors({
           origin: true,
         }),
       ],
@@ -34,11 +52,13 @@
 
   /* run in-page unit tests */
   page.on('console', msg => console.log(msg.text()))
+  const finish = waitForMessage(page, /^All tests finished$/)
   await page.goto(URL)
-  await page.waitForFunction('window.__tests_done__')
+  await finish
 
   /* functional tests */
   test('channel', async (t) => {
+    const finish = waitForMessage(page, /test\/channel.*TEST SUCCESS$/)
     const pid1 = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`))
     t.ok(pid1)
     t.ok(typeof pid1 === 'string')
@@ -50,6 +70,7 @@
     t.ok(typeof pid2 === 'string')
     const workers = await page.workers()
     t.ok(workers.length > 0)
+    await finish
     t.end()
   })
 

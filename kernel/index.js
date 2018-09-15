@@ -12,16 +12,14 @@ window.console.log(`${VERSION} booting...`)
 document.title = VERSION
 window.addEventListener('load', main)
 
-test.onFinish(() => {
-  window.console.log('All tests finished')
+if (process.env.NODE_ENV === 'test') {
+  test.onFinish(() => {
+    /* expose interface for functional tests */
+    window.kernel = {
+      spawn,
+      ps,
+    }
 
-  /* expose interface for functional tests */
-  window.kernel = {
-    spawn,
-    ps,
-  }
-
-  /* mark unit test end -> trigger functional tests */
-  // eslint-disable-next-line no-underscore-dangle
-  window.__tests_done__ = true
-})
+    window.console.log('All tests finished')
+  })
+}
