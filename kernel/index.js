@@ -10,7 +10,7 @@ export const build: string = process.env.git_build_sha || '???'
 const VERSION = `${name} ${version} (${build})`
 window.console.log(`${VERSION} booting...`)
 document.title = VERSION
-window.addEventListener('load', main)
+window.onload = main
 
 if (process.env.NODE_ENV === 'test') {
   test.onFinish(() => {

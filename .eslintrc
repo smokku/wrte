@@ -25,6 +25,7 @@
         "exports": "always-multiline"
       }
     ],
+    "unicorn/prefer-add-event-listener": "off", // we _want_ to have only one handler
     "tape/no-ignored-test-files": "off", // we have tests all over the code
     "require-jsdoc": [
       "error",

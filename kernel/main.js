@@ -12,7 +12,7 @@ export default function main () {
   ipcInit()
   vfsInit()
 
-  global.console.log(`Done in ${window.performance.now() - start}ms.`)
+  global.console.log(`Initialized in ${window.performance.now() - start}ms.`)
 
   // FIXME: make these assigns part of internal:autoexec
   // FIXME: and initialize local:autoexec with `source internal:autoexec`

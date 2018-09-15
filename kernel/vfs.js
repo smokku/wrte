@@ -13,7 +13,7 @@ import { VOLUME_NAME_REGEXP, MAX_ASSIGN_RESOLVE_ATTEMPTS } from './tunables'
 import { init as consoleInit, handler as consoleHandler } from './internal/console'
 import { init as windowInit, handler as windowHandler } from './internal/window'
 
-import webdav from './vfs/webdav'
+import webdav from './vfs/webdav.worker'
 
 const mounts: Map<Volume, Handler> = new Map()
 const assigns: Map<Path, Path> = new Map()

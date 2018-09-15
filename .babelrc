@@ -8,8 +8,8 @@
           "exclude": [
             "**/node_modules/**",
             "test/**",
-            "kernel/vfs/**",
-            "kernel/sandbox.js"
+            "kernel/**/*.worker.js",
+            "kernel/**/*.blob.js"
           ]
         }]
       ]
