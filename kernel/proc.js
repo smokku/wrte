@@ -88,12 +88,12 @@ export class Process extends EventEmitter {
     this.channels = (Object.create(null): any)
   }
 
-  get status (): string {
+  get status (): ProcessStatus {
     // $FlowFixMe: Until flow supports computed properties
     return this[PROCESS_STATUS]
   }
 
-  set status (status: string) {
+  set status (status: ProcessStatus) {
     // $FlowFixMe: Until flow supports computed properties
     this[PROCESS_STATUS] = status
     this.emit('status', status)
