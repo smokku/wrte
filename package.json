@@ -14,7 +14,7 @@
     "babel-plugin-discard-module-references": "1.1.2",
     "babel-plugin-istanbul": "5.0.1",
     "cors": "2.8.4",
-    "documentation": "documentationjs/documentation#fb6ebdb",
+    "documentation": "vicapow/documentation#update-babel-dist",
     "eslint": "5.6.0",
     "eslint-config-airbnb-base": "13.1.0",
     "eslint-config-standard": "12.0.0",
@@ -59,7 +59,6 @@
     "tap:log": "node test/runner.js | tee test.log | tap-spec",
     "test": "NODE_ENV=test npm-run-all --serial check build tap:log",
     "test:watch": "NODE_ENV=test nodemon -w kernel -w lib -w cmd -w test --exec npm-run-all --serial build tap",
-    "predocs": "cd node_modules/documentation && npm install",
-    "docs": "documentation build 'kernel/**.js' 'lib/**.js' 'cmd/**.js' -f html -o docs"
+    "docs": "documentation build --shallow --github --document-exported --config documentation.yml 'kernel/**.js' 'lib/**.js' 'cmd/**.js' -f html -o dist/docs"
   }
 }

@@ -56,6 +56,10 @@ TBD (stdin/out/err channels of structured messages passed to subprocesses, power
 
 TBD (`internal:...` handler allowing opening a window to DOM, returning `channel` for controlling window content)
 
+## Documentation
+
+Latest developer documentation is available at http://wrte.cloud/docs/
+
 ## Author
 
 You may reach me at email: Tomasz Sterna <mailto:tomek@xiaoka.com>

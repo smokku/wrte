@@ -44,8 +44,11 @@ jobs:
             codeclimate-test-reporter < coverage.lcov
             codecov
       - run:
-          name: Build
+          name: Build dist
           command: npm run build
+      - run:
+          name: Build docs
+          command: npm run docs
       - deploy:
           name: Install AWS tool
           command: |
