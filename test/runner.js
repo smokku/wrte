@@ -10,17 +10,27 @@ const fs = require('fs-extra')
 /**
  * Wait for console message.
  * @param frame - Frame object.
- * @param message - Text to match.
+ * @param ack - Text to match ro resolve Promise.
+ * @param nak - Text to match ro reject Promise.
  * @returns Promise.
  */
-function waitForMessage (frame, message) {
+function waitForMessage (frame, ack, nak) {
   return new Promise((resolve, reject) => {
-    frame.on('console', (msg) => {
-      const match = msg.text().match(message)
+    const handler = (msg) => {
+      const match = msg.text().match(ack)
       if (match) {
+        frame.removeListener('console', handler)
         resolve(match)
       }
-    })
+      if (nak) {
+        const match = msg.text().match(nak)
+        if (match) {
+          frame.removeListener('console', handler)
+          reject(match)
+        }
+      }
+    }
+    frame.on('console', handler)
   })
 }
 
@@ -67,20 +77,28 @@ function waitForMessage (frame, message) {
 
   /* functional tests */
   test('channel', async (t) => {
-    const finish = waitForMessage(page, /test\/channel.*TEST SUCCESS$/)
+    waitForMessage(page, /test\/channel.*TEST SUCCESS$/, /test\/channel.*TEST FAILURE/).then(
+      () => t.end(),
+      t.fail
+    )
+
     const pid1 = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`))
-    t.ok(pid1)
-    t.ok(typeof pid1 === 'string')
+    t.ok(pid1, 'LEFT has Pid')
+    t.ok(typeof pid1 === 'string', 'LEFT Pid is a string')
     const pid2 = await page.evaluate(
       other => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`, [other]),
       pid1
     )
-    t.ok(pid2)
-    t.ok(typeof pid2 === 'string')
-    const workers = await page.workers()
-    t.ok(workers.length > 0)
-    await finish
-    t.end()
+    t.ok(pid2, 'RIGHT has Pid')
+    t.ok(typeof pid2 === 'string', 'RIGHT Pid is a string')
+  })
+
+  test('window', async (t) => {
+    waitForMessage(page, /test\/window.*TEST SUCCESS$/).then(() => t.end())
+
+    const pid = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/window.js`))
+    t.ok(pid, 'has Pid')
+    t.ok(typeof pid === 'string', 'Pid is a string')
   })
 
   test.onFinish(async () => {

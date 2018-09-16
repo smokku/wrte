@@ -31,7 +31,7 @@ export default function main () {
             global.console.group('ps()')
             ps().forEach(proc => global.console.log(proc))
             global.console.groupEnd()
-          }, 500)
+          }, 200)
         }
       })
     }

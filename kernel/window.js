@@ -1,4 +1,4 @@
-// @flow
+// @flow strict
 /* eslint-disable no-underscore-dangle */
 import EventEmitter from './event-emitter'
 

@@ -7,13 +7,13 @@ import type { Process, Pid } from './proc'
 import {
   spawn, getProcessForWindow, getProcess, sanitizeArgv,
 } from './proc'
-import { errorReply, makeReply } from './ipc'
+import { errorReply, makeReply, notifyNewChannel } from './ipc'
 import { VOLUME_NAME_REGEXP, MAX_ASSIGN_RESOLVE_ATTEMPTS } from './tunables'
 
 import { init as consoleInit, handler as consoleHandler } from './internal/console'
 import { init as windowInit, handler as windowHandler } from './internal/window'
 
-import webdav from './vfs/webdav.worker'
+import webdavWorker from './vfs/webdav.worker'
 
 const mounts: Map<Volume, Handler> = new Map()
 const assigns: Map<Path, Path> = new Map()
@@ -21,7 +21,7 @@ const assigns: Map<Path, Path> = new Map()
 const internal = {
   console: [consoleHandler],
   window: [windowHandler],
-  webdav: [contentHandler, webdav],
+  webdav: [contentHandler, webdavWorker],
 }
 const inits = [consoleInit, windowInit]
 const initialMounts = {
@@ -47,10 +47,10 @@ function internalHandler (to: Pid | Channel, from: Process, msg: Message): void 
     const parts = fullPath.split('/')
     const int = parts.shift()
     const [handler, ...argv] = (int && internal[int]) || []
-    const path = parts.join('/')
 
     if (typeof handler === 'function') {
-      handler.call({ argv }, typeof to === 'object' ? { ...to, path } : path, from, msg)
+      const path = parts.join('/')
+      handler.call({ argv, path }, to, from, msg)
     } else {
       from.postMessage(errorReply('ENOENT', msg))
     }
@@ -95,69 +95,48 @@ export default function init () {
   // $FlowFixMe - spread not fully supported yet
   Object.entries(initialMounts).forEach(([vol, m]) => mount(vol, ...m))
 
-  window.addEventListener('message', (evt) => {
-    if (
-      evt.isTrusted &&
-      evt.origin === 'null' &&
-      typeof evt.data === 'object' &&
-      typeof evt.data.path === 'string'
-    ) {
-      // console.log('VFS', evt)
-      const { source, data } = evt
-      const from = getProcessForWindow(source)
-      const [handler, path] = resolvePath(resolveAssigns(data.path))
-      let channel: ?Channel = null
+  window.addEventListener('message', messageHandler)
+}
 
-      if (from) {
-        if (typeof handler !== 'function') {
-          from.postMessage(errorReply('ENODEV', data))
-        } else {
-          if (data.type === 'OPEN') {
-            channel = from.openChannel()
-            channel.handler = handler
-            channel.path = path
-            channel.send = function send (msg: Message) {
-              global.console.log('>>>>>>>>>>', msg) // FIXME: implement!
-            }
-            from.postMessage(
-              makeReply(
-                {
-                  type: 'CHANNEL',
-                  path: data.path,
-                  channel: channel.id,
-                },
-                data
-              )
-            )
-            handler(channel, from, data)
-            return
+/**
+ * VFS window message receiver.
+ * @param evt - WindowMessage event.
+ */
+function messageHandler (evt) {
+  if (
+    evt.isTrusted &&
+    evt.origin === 'null' &&
+    typeof evt.data === 'object' &&
+    typeof evt.data.path === 'string' &&
+    evt.data.channel == null
+  ) {
+    // console.log('VFS', evt)
+    const { source, data } = evt
+    const from = getProcessForWindow(source)
+    const [handler, path] = resolvePath(resolveAssigns(data.path))
+    let channel: ?Channel = null
+
+    if (from) {
+      if (typeof handler !== 'function') {
+        from.postMessage(errorReply('ENODEV', data))
+      } else {
+        if (data.type === 'OPEN') {
+          channel = from.openChannel()
+          channel.handler = handler
+          channel.path = path
+          channel.send = function send (msg: Message) {
+            global.console.log('>>>>>>>>>>', msg) // FIXME: implement!
           }
-
-          if (typeof data.channel === 'string') {
-            channel = from.getChannel(data.channel)
-          }
-
-          if (data.type === 'CLOSE' && channel) {
-            handler(channel, from, data)
-            from.postMessage(
-              makeReply(
-                {
-                  type: 'CHANNEL',
-                  path: null,
-                  channel: channel.id,
-                },
-                data
-              )
-            )
-            from.closeChannel(channel.id)
-            return
-          }
-
-          handler(channel || path, from, data)
+          notifyNewChannel(from, channel.id, { path: data.path }, data)
+          handler(channel, from, data)
+          return
         }
+        // CLOSE is being handled in VFS, as it is delivered to this ^^^ _Channel_
+
+        handler(channel || path, from, data)
       }
     }
-  })
+  }
 }
 
 export type Path = string

@@ -14,36 +14,41 @@ const processes: Map<Pid, Process> = new Map()
  */
 export default function init () {
   global.console.log('Initializing PROC')
+  window.addEventListener('message', messageHandler)
+}
 
-  window.addEventListener('message', (evt) => {
-    // console.log('PROC', evt)
-    if (evt.isTrusted && evt.origin === 'null' && typeof evt.data === 'string') {
-      const proc = getProcessForWindow(evt.source)
+/**
+ * PROC window message receiver.
+ * @param evt - WindowMessage event.
+ */
+function messageHandler (evt) {
+  // console.log('PROC', evt)
+  if (evt.isTrusted && evt.origin === 'null' && typeof evt.data === 'string') {
+    const proc = getProcessForWindow(evt.source)
 
-      if (proc) {
-        switch (evt.data) {
-          case 'CREATED':
-            proc.postMessage({
-              type: 'INIT',
-              payload: {
-                pid: proc.pid,
-                path: proc.path,
-                argv: proc.argv,
-                channels: Object.keys(proc.channels),
-              },
-            })
-            proc.status = 'RUNNING'
-            break
-          case 'TERMINATE':
-            proc.status = 'TERMINATING'
-            proc.terminate()
-            break
-          default:
-          // drop
-        }
+    if (proc) {
+      switch (evt.data) {
+        case 'CREATED':
+          proc.postMessage({
+            type: 'INIT',
+            payload: {
+              pid: proc.pid,
+              path: proc.path,
+              argv: proc.argv,
+              channels: Object.keys(proc.channels),
+            },
+          })
+          proc.status = 'RUNNING'
+          break
+        case 'TERMINATE':
+          proc.status = 'TERMINATING'
+          proc.terminate()
+          break
+        default:
+        // drop
       }
     }
-  })
+  }
 }
 
 const PROCESS_STATUS = Symbol('status')

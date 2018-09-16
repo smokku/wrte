@@ -15,6 +15,20 @@ export type Message = {
 }
 
 /**
+ * Copy attributes needed for a reply to a _Message_.
+ *
+ * @param reply - Reply _Message_ to be filled.
+ * @param message - _Message_ instance reply is a response to.
+ * @returns Reply _Message_.
+ */
+export function fillReply (reply: Message, message: Message): Message {
+  if (message.id != null) {
+    reply.id = message.id
+  }
+  return reply
+}
+
+/**
  * Build a reply to a _Message_.
  *
  * @param reply - Reply _Message_ to be filled.
@@ -22,9 +36,7 @@ export type Message = {
  * @returns Reply _Message_.
  */
 export function makeReply (reply: Message, message: Message): Message {
-  if (message.id != null) {
-    reply.id = message.id
-  }
+  reply = fillReply(reply, message)
   if (message.channel != null) {
     reply.channel = message.channel
   } else if (message.process != null) {
@@ -59,8 +71,6 @@ export type Cid = string
  * Describes two-way communication channel between processes
  * or process and path handler
  *
- * @export
- * @type Channel
  * @prop id - ID used by owning process
  * @prop pid - {Process} ID this channel routes messages to
  * @prop endpoint - {Channel} ID used by the other end
@@ -93,15 +103,28 @@ export type Handler = (to: Pid | Channel, from: Process, msg: Message) => void
  * Helper function to notify a _Process_ about new _Channel_ creation.
  *
  * @param process - _Process_ object instance.
- * @param chan - _Channel_ ID.
- * @param pid - _Process_ ID (if known).
+ * @param chanId - _Channel_ ID.
+ * @param data - _Channel_ data (process: _Pid_ or path: _Path_).
+ * @param message - OPEN _Message_ it is a reply to.
  */
-function notifyNewChannel (process: Process, chan: Cid, pid?: Pid | null): void {
-  process.postMessage({
-    type: 'CHANNEL',
-    process: pid,
-    channel: chan,
-  })
+export function notifyNewChannel (
+  process: Process,
+  chanId: Cid,
+  data: { [string]: string | null },
+  message: Message
+): void {
+  if (message.type === 'OPEN' || message.type === 'CLOSE') {
+    process.postMessage(
+      fillReply(
+        {
+          ...data,
+          type: 'CHANNEL',
+          channel: chanId,
+        },
+        message
+      )
+    )
+  }
 }
 
 /**
@@ -109,95 +132,111 @@ function notifyNewChannel (process: Process, chan: Cid, pid?: Pid | null): void 
  */
 export default function init () {
   global.console.log('Initializing IPC')
+  window.addEventListener('message', messageHandler)
+}
 
-  window.addEventListener('message', (evt) => {
-    if (
-      evt.isTrusted &&
-      evt.origin === 'null' &&
-      typeof evt.data.type === 'string' &&
-      (typeof evt.data.process === 'string' || typeof evt.data.channel === 'string')
-    ) {
-      // console.log('IPC', evt)
-      const { source, data } = evt
-      const from = getProcessForWindow(source)
+/**
+ * IPC window message receiver.
+ * @param evt - WindowMessage event.
+ */
+function messageHandler (evt) {
+  if (
+    evt.isTrusted &&
+    evt.origin === 'null' &&
+    typeof evt.data.type === 'string' &&
+    (typeof evt.data.process === 'string' || typeof evt.data.channel === 'string') &&
+    evt.data.path == null
+  ) {
+    // console.log('IPC', evt)
+    const { source, data } = evt
+    const from = getProcessForWindow(source)
 
-      if (from) {
-        const { process, channel } = data
-        if (process && channel) return
+    if (from) {
+      const { process, channel } = data
+      if (process && channel) return
 
-        const msg = Object.assign({}, data)
-        msg.process = from.pid
-        delete msg.channel
+      const msg = Object.assign({}, data)
+      msg.process = from.pid
+      delete msg.channel
 
-        let dest
+      let dest
 
-        if (process) {
-          dest = getProcess(process)
+      if (process) {
+        dest = getProcess(process)
 
-          if (dest && data.type === 'OPEN') {
-            const fromProcess = from
-            const destProcess = dest
-            const destChan = dest.openChannel()
-            const fromChan = from.openChannel()
-            destChan.pid = from.pid
-            destChan.endpoint = fromChan.id
-            fromChan.pid = dest.pid
-            fromChan.endpoint = destChan.id
-            notifyNewChannel(dest, destChan.id, destChan.pid)
-            notifyNewChannel(from, fromChan.id, fromChan.pid)
-            destChan.onTerminate = () => notifyNewChannel(fromProcess, fromChan.id, null)
-            fromChan.onTerminate = () => notifyNewChannel(destProcess, destChan.id, null)
+        if (dest && data.type === 'OPEN') {
+          const fromProcess = from
+          const destProcess = dest
+          const destChan = dest.openChannel()
+          const fromChan = from.openChannel()
+          const destChanPid = from.pid
+          const fromChanPid = dest.pid
+          destChan.pid = destChanPid
+          destChan.endpoint = fromChan.id
+          fromChan.pid = fromChanPid
+          fromChan.endpoint = destChan.id
+          notifyNewChannel(dest, destChan.id, { process: destChanPid }, data)
+          notifyNewChannel(from, fromChan.id, { process: fromChanPid }, data)
+          // eslint-disable-next-line max-len
+          destChan.onTerminate = () => notifyNewChannel(fromProcess, fromChan.id, { process: null }, data)
+          // eslint-disable-next-line max-len
+          fromChan.onTerminate = () => notifyNewChannel(destProcess, destChan.id, { process: null }, data)
+          return
+        }
+      }
+
+      if (channel) {
+        const fromChan = from.getChannel(channel)
+        if (fromChan) {
+          if (typeof fromChan.handler === 'function' && typeof fromChan.path === 'string') {
+            fromChan.handler(fromChan, from, msg)
+
+            /* closing internal: process-less channel */
+            if (data.type === 'CLOSE') {
+              notifyNewChannel(from, fromChan.id, { path: null }, data)
+              from.closeChannel(fromChan.id)
+            }
             return
           }
-        }
 
-        if (channel) {
-          const fromChan = from.getChannel(channel)
-          if (fromChan) {
-            if (typeof fromChan.handler === 'function' && typeof fromChan.path === 'string') {
-              fromChan.handler(fromChan, from, msg)
+          if (fromChan.endpoint && fromChan.pid) {
+            const destProcess = getProcess(fromChan.pid)
+
+            if (data.type === 'CLOSE') {
+              if (destProcess && fromChan.endpoint) {
+                destProcess.closeChannel(fromChan.endpoint)
+              }
+              from.closeChannel(fromChan.id)
+              notifyNewChannel(from, fromChan.id, { process: null }, data)
+              if (destProcess && fromChan.endpoint) {
+                notifyNewChannel(destProcess, fromChan.endpoint, { process: null }, data)
+              }
               return
             }
 
-            if (fromChan.endpoint && fromChan.pid) {
-              const destProcess = getProcess(fromChan.pid)
-
-              if (data.type === 'CLOSE') {
-                if (destProcess && fromChan.endpoint) {
-                  destProcess.closeChannel(fromChan.endpoint)
-                }
-                from.closeChannel(fromChan.id)
-                notifyNewChannel(from, fromChan.id, null)
-                if (destProcess && fromChan.endpoint) {
-                  notifyNewChannel(destProcess, fromChan.endpoint, null)
-                }
-                return
-              }
-
-              if (destProcess && fromChan.endpoint) {
-                const destChan = destProcess.getChannel(fromChan.endpoint)
-                if (destChan.pid === from.pid && destChan.endpoint === fromChan.id) {
-                  dest = destProcess
-                  msg.channel = destChan.id
-                }
+            if (destProcess && fromChan.endpoint) {
+              const destChan = destProcess.getChannel(fromChan.endpoint)
+              if (destChan.pid === from.pid && destChan.endpoint === fromChan.id) {
+                dest = destProcess
+                msg.channel = destChan.id
               }
             }
           }
         }
+      }
 
-        if (dest) {
-          dest.postMessage(msg)
-        } else {
-          from.postMessage({
-            type: 'ERROR',
-            payload: {
-              type: 'ESRCH',
-              process,
-              channel,
-            },
-          })
-        }
+      if (dest) {
+        dest.postMessage(msg)
+      } else {
+        from.postMessage({
+          type: 'ERROR',
+          payload: {
+            type: 'ESRCH',
+            process,
+            channel,
+          },
+        })
       }
     }
-  })
+  }
 }

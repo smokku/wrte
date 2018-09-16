@@ -46,6 +46,7 @@ const entries = {
 }
 if (!production) {
   entries['test/channel.js'] = 'dist/current/test/channel.js'
+  entries['test/window.js'] = 'dist/current/test/window.js'
 }
 
 export default Object.entries(entries).reduce(

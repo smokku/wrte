@@ -50,7 +50,6 @@ export function handler (to: Channel, from: Process, msg: Message): void {
           win = new Window()
           channel.meta = {
             window: win,
-            pid: from.pid,
           }
           win.on('key', (key) => {
             if (typeof channel.send === 'function') {
@@ -74,6 +73,9 @@ export function handler (to: Channel, from: Process, msg: Message): void {
       case 'CLOSE':
         if (channel.meta) {
           win = channel.meta.window
+        }
+        if (win instanceof Window) {
+          win.close()
         }
         break
       default:
