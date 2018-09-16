@@ -1,6 +1,7 @@
 // @flow
 /* eslint-disable no-console, max-len, no-shadow, unicorn/no-process-exit */
 const puppeteer = require('puppeteer-core')
+const pti = require('puppeteer-to-istanbul')
 const liveServer = require('live-server')
 const cors = require('cors')
 const test = require('tape')
@@ -26,6 +27,7 @@ function waitForMessage (frame, message) {
 (async () => {
   const { HEADFUL = false, CHROME_BIN } = process.env
 
+  /* start local server */
   const ls = await new Promise((resolve, reject) => {
     const server = liveServer.start({
       root: 'dist/',
@@ -40,18 +42,25 @@ function waitForMessage (frame, message) {
       resolve(server)
     })
   })
+
+  /* generate local server URL */
   const { address, port } = ls.address()
   const URL = `http://${address}:${port}/`
 
+  /* launch Chrome under Puppeteer */
   const browser = await puppeteer.launch({
     headless: !HEADFUL,
     executablePath: CHROME_BIN,
   })
-
   const page = await browser.newPage()
 
-  /* run in-page unit tests */
+  /* Enable both JavaScript and CSS coverage */
+  await Promise.all([page.coverage.startJSCoverage(), page.coverage.startCSSCoverage()])
+
+  /* wire browser console to node console */
   page.on('console', msg => console.log(msg.text()))
+
+  /* run in-page unit tests */
   const finish = waitForMessage(page, /^All tests finished$/)
   await page.goto(URL)
   await finish
@@ -74,8 +83,14 @@ function waitForMessage (frame, message) {
     t.end()
   })
 
-  /* fetch coverage */
   test.onFinish(async () => {
+    /* Disable both JavaScript and CSS coverage */
+    const [jsCoverage, cssCoverage] = await Promise.all([
+      page.coverage.stopJSCoverage(),
+      page.coverage.stopCSSCoverage(),
+    ])
+
+    /* fetch Istanbul coverage */
     // eslint-disable-next-line no-underscore-dangle
     const coverage = await page.evaluate(() => window.__coverage__)
     await fs.emptyDir('.nyc_output')
@@ -92,6 +107,12 @@ function waitForMessage (frame, message) {
         return Promise.resolve()
       })
     )
+
+    /* write Chrome coverage */
+    pti.write(jsCoverage)
+    await fs.move('.nyc_output/out.json', '.nyc_output/js.json')
+    pti.write(cssCoverage)
+    await fs.move('.nyc_output/out.json', '.nyc_output/css.json')
 
     console.log('All testing done - closing browser')
     await browser.close()
