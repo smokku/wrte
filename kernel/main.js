@@ -14,8 +14,8 @@ export default function main () {
 
   global.console.log(`Initialized in ${window.performance.now() - start}ms.`)
 
-  // FIXME: make these assigns part of internal:autoexec
-  // FIXME: and initialize local:autoexec with `source internal:autoexec`
+  // TODO: make these assigns part of internal:autoexec
+  // TODO: and initialize local:autoexec with `source internal:autoexec`
   assign('con:foo/..', 'internal:cons/../console/')
   assign('win:', 'internal:window')
 
@@ -36,4 +36,6 @@ export default function main () {
       })
     }
   }
+
+  spawn(`${window.location.origin}/current/cmd/rc.js`)
 }

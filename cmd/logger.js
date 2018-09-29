@@ -1,5 +1,4 @@
 // @flow strict
-/* eslint-disable unicorn/prefer-add-event-listener */
 let init = null
 const channels = {}
 const queue = []

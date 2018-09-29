@@ -3,7 +3,7 @@ import test from '../test/tape'
 
 import type { Message, Channel } from './ipc'
 
-import EventEmitter from './event-emitter'
+import EventEmitter from '../lib/event-emitter'
 import Sandbox from './sandbox'
 import id from '../lib/id'
 
