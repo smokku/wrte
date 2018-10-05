@@ -31,7 +31,7 @@ global.onmessage = (evt) => {
   } else if (data.type === 'ERROR') {
     global.console.warn(`[logger] ERROR: ${JSON.stringify(data.payload)}`)
   } else if (data.payload) {
-    global.console.log(`[logger] ${JSON.stringify(data.payload)}`)
+    global.console.debug(`[logger] ${JSON.stringify(data.payload)}`)
     const payload = JSON.stringify(data.payload)
     if (channels[CONSOLE]) {
       logPayload(payload)

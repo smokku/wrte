@@ -13,7 +13,7 @@ let root
  */
 export function init () {
   root = document.body
-  global.console.log('[window:]', 'Obtained BODY reference')
+  window.console.log('[window:]', 'Obtained BODY reference')
 }
 
 /**
@@ -24,7 +24,7 @@ export function init () {
  * @param msg - _Message_ to be handled.
  */
 export function handler (to: Channel, from: Process, msg: Message): void {
-  global.console.log('[window:]', msg.type, this.argv, to, from.pid, msg)
+  window.console.debug('[window:]', msg.type, this.argv, to, from.pid, msg)
   if (typeof to === 'object') {
     const channel: Channel = to
     const { type, payload } = msg || {}
@@ -79,7 +79,7 @@ export function handler (to: Channel, from: Process, msg: Message): void {
         }
         break
       default:
-        global.console.warn(`[window:] unhandled message: ${JSON.stringify(msg)}`)
+        window.console.warn(`[window:] unhandled message: ${JSON.stringify(msg)}`)
     }
   } else {
     from.postMessage(errorReply('ENOENT', msg))

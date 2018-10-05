@@ -17,10 +17,21 @@ export function init () {
   root.style.bottom = '0'
   if (document.body) {
     document.body.appendChild(root)
-    global.console.log('[console:]', 'Created root window')
+    window.console.log('[console:]', 'Created root window')
+    window.consoleTap(log)
   } else {
     throw new Error('Cannot attach console: root window')
   }
+}
+
+/**
+ * Write message line to root window.
+ *
+ * @param args - Things to log.
+ */
+function log (...args) {
+  const message = args.map(msg => (typeof msg === 'string' ? msg : JSON.stringify(msg))).join(' ')
+  if (message) root.innerText = `${root.innerText || ''}${message}\n`
 }
 
 /**
@@ -31,8 +42,6 @@ export function init () {
  * @param msg - _Message_ to be handled.
  */
 export function handler (to: Channel, from: Process, msg: Message): void {
-  // global.console.log('[console:]', msg.type, this.argv, path, from.pid, msg)
-  if (msg.type === 'DATA' && typeof msg.payload === 'string') {
-    root.innerText = `${root.innerText || ''}${msg.payload}\n`
-  }
+  // window.console.debug('[console:]', msg.type, this.argv, path, from.pid, msg)
+  if (msg.type === 'DATA' && typeof msg.payload === 'string') log(msg.payload)
 }

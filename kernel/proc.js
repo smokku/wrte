@@ -22,7 +22,7 @@ export default function init () {
  * @param evt - WindowMessage event.
  */
 function messageHandler (evt) {
-  // console.log('PROC', evt)
+  // console.debug('PROC', evt)
   if (evt.isTrusted && evt.origin === 'null' && typeof evt.data === 'string') {
     const proc = getProcessForWindow(evt.source)
 
@@ -170,7 +170,7 @@ export function spawn (path: string, argv: ArgV = []): Pid | null {
     global.console.error(`Invalid argv '${typeof argv}' for ${path}`)
     return null
   }
-  global.console.log(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
+  global.console.debug(`Spawning "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
 
   let pid = id()
   while (processes.has(pid)) pid = id()
@@ -180,7 +180,7 @@ export function spawn (path: string, argv: ArgV = []): Pid | null {
   process.on('status', (status) => {
     if (status === 'TERMINATED') {
       processes.delete(pid)
-      global.console.log(`Terminated "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
+      global.console.debug(`Terminated "${path}" ${JSON.stringify(sanitizeArgv(argv))}`)
     }
   })
   return pid

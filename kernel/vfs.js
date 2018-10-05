@@ -110,7 +110,7 @@ function messageHandler (evt) {
     typeof evt.data.path === 'string' &&
     evt.data.channel == null
   ) {
-    // console.log('VFS', evt)
+    // console.debug('VFS', evt)
     const { source, data } = evt
     const from = getProcessForWindow(source)
     const [handler, path] = resolvePath(resolveAssigns(data.path))
@@ -125,7 +125,7 @@ function messageHandler (evt) {
           channel.handler = handler
           channel.path = path
           channel.send = function send (msg: Message) {
-            global.console.log('>>>>>>>>>>', msg) // FIXME: implement!
+            global.console.warn('>>>>>>>>>>', msg) // FIXME: implement!
           }
           notifyNewChannel(from, channel.id, { path: data.path }, data)
           handler(channel, from, data)
