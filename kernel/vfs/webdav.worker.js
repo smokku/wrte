@@ -45,16 +45,7 @@ export default function () {
           if (resp.ok) {
             return resp.arrayBuffer()
           }
-          global.postMessage({
-            type: 'ERROR',
-            process: data.process,
-            payload: {
-              type: resp.status === 404 ? 'ENOENT' : 'EPERM',
-              path: data.path,
-            },
-            id: data.id,
-          })
-          return null
+          throw resp.status === 404 ? 'ENOENT' : 'EPERM' // eslint-disable-line no-throw-literal
         })
         .then((resp) => {
           if (resp) {
@@ -69,12 +60,13 @@ export default function () {
             )
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          const type = typeof error === 'string' && error.startsWith('E') ? error : 'EFAULT'
           global.postMessage({
             type: 'ERROR',
             process: data.process,
             payload: {
-              type: 'EFAULT',
+              type,
               path: data.path,
             },
             id: data.id,

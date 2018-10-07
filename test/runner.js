@@ -34,6 +34,15 @@ function waitForMessage (frame, ack, nak) {
   })
 }
 
+/**
+ * Promise based async/await sleep.
+ * @param ms - Wait for given milliseconds.
+ * @returns - Timeout Promise.
+ */
+function sleep (ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 (async () => {
   const { HEADFUL = false, CHROME_BIN } = process.env
 
@@ -76,6 +85,21 @@ function waitForMessage (frame, ack, nak) {
   await finish
 
   /* functional tests */
+  test('spawning', async (t) => {
+    const pid = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/non-exist.js`))
+    t.ok(pid, 'has Pid')
+    t.equal(typeof pid, 'string', 'Pid is a string')
+    let ps = (await page.evaluate(() => window.kernel.ps())).find(item => item.pid === pid)
+    t.ok(ps, 'Process exists')
+    t.equal(ps.pid, pid, 'Process found properly')
+    t.equal(ps.status, 'SPAWNING', 'Process is SPAWNING')
+    await sleep(300)
+    ps = (await page.evaluate(() => window.kernel.ps())).find(item => item.pid === pid)
+    console.log(ps)
+    t.notOk(ps, 'Process does not exist')
+    t.end()
+  })
+
   test('channel', async (t) => {
     waitForMessage(page, /test\/channel.*TEST SUCCESS$/, /test\/channel.*TEST FAILURE/).then(
       () => t.end(),
@@ -84,13 +108,13 @@ function waitForMessage (frame, ack, nak) {
 
     const pid1 = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`))
     t.ok(pid1, 'LEFT has Pid')
-    t.ok(typeof pid1 === 'string', 'LEFT Pid is a string')
+    t.equal(typeof pid1, 'string', 'LEFT Pid is a string')
     const pid2 = await page.evaluate(
       other => window.kernel.spawn(`${window.location.origin}/current/test/channel.js`, [other]),
       pid1
     )
     t.ok(pid2, 'RIGHT has Pid')
-    t.ok(typeof pid2 === 'string', 'RIGHT Pid is a string')
+    t.equal(typeof pid2, 'string', 'RIGHT Pid is a string')
   })
 
   test('window', async (t) => {
@@ -98,7 +122,7 @@ function waitForMessage (frame, ack, nak) {
 
     const pid = await page.evaluate(() => window.kernel.spawn(`${window.location.origin}/current/test/window.js`))
     t.ok(pid, 'has Pid')
-    t.ok(typeof pid === 'string', 'Pid is a string')
+    t.equal(typeof pid, 'string', 'Pid is a string')
   })
 
   test.onFinish(async () => {

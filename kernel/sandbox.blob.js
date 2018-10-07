@@ -65,7 +65,7 @@ export default function (origin: string, name: string, path: string): void {
       } else if (
         data.type === 'ERROR' &&
         typeof data.payload === 'object' &&
-        data.payload.path === path
+        data.id === 'source'
       ) {
         throw new Error(`Failed loading ${path}: ${data.payload.type}`)
       } else {
@@ -75,9 +75,10 @@ export default function (origin: string, name: string, path: string): void {
   }
   window.onerror = (err, url, lineNumber) => {
     setTimeout(() => window.parent.postMessage('TERMINATE', origin), 0)
-    return window.console.error(
+    window.console.error(
       `${name}(${path}) ${url || '?'}:${lineNumber || '?'} ${err.message || err.toString()}`
     )
+    return true
   }
   window.parent.postMessage({ type: 'READ', path, id: 'source' }, origin)
 }
