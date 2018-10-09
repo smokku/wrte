@@ -4,5 +4,9 @@
   ],
   "ignorePaths": [
     ".circleci/"
-  ]
+  ],
+  "automerge": true,
+  "major": {
+    "automerge": false
+  }
 }
