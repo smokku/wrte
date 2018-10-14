@@ -1,8 +1,8 @@
 // @flow
 import test from '../test/tape'
 
-import type { Message, Channel, Handler } from './ipc'
-import type { Process, Pid } from './proc'
+import type { Message, Channel } from './ipc'
+import type { Process } from './proc'
 
 import {
   spawn, getProcessForWindow, getProcess, sanitizeArgv,
@@ -14,6 +14,9 @@ import { init as consoleInit, handler as consoleHandler } from './internal/conso
 import { init as windowInit, handler as windowHandler } from './internal/window'
 
 import webdavWorker from './vfs/webdav.worker'
+
+export type Path = string
+export type Volume = string
 
 const mounts: Map<Volume, Handler> = new Map()
 const assigns: Map<Path, Path> = new Map()
@@ -30,6 +33,14 @@ const initialMounts = {
 }
 
 /**
+ * Handler function
+ * @arg to - _Path_ or _Channel_ the _message_ belongs to.
+ * @arg from - _Process_ sending the _message_.
+ * @arg msg - _Message_ object.
+ */
+export type Handler = (to: Path | Channel, from: Process, msg: Message) => void
+
+/**
  * Handler function for `internal:` _volume_.
  * This is a dispatcher to `internal{}` handler functions mapped as subdirectories
  * of `internal:` volume. These are usually _assign_ed as own _volume_s, i.e.
@@ -40,7 +51,7 @@ const initialMounts = {
  * @param from - Requesting _Process_.
  * @param msg - Request _Message_.
  */
-function internalHandler (to: Pid | Channel, from: Process, msg: Message): void {
+function internalHandler (to: Path | Channel, from: Process, msg: Message): void {
   const fullPath = typeof to === 'object' ? to.path : to
   // console.debug('[internal:]', fullPath, from.pid, msg)
   if (typeof fullPath === 'string') {
@@ -65,7 +76,7 @@ function internalHandler (to: Pid | Channel, from: Process, msg: Message): void 
  * @param from - Requesting _Process_.
  * @param msg - Request _Message_.
  */
-export function contentHandler (to: Pid | Channel, from: Process, msg: Message): void {
+export function contentHandler (to: Path | Channel, from: Process, msg: Message): void {
   const [handler] = this.argv
   if (msg.type === 'READ' && typeof handler === 'function') {
     from.postMessage(
@@ -108,39 +119,36 @@ function messageHandler (evt) {
     evt.origin === 'null' &&
     typeof evt.data === 'object' &&
     typeof evt.data.path === 'string' &&
+    evt.data.process == null &&
     evt.data.channel == null
   ) {
     // console.debug('VFS', evt)
     const { source, data } = evt
     const from = getProcessForWindow(source)
     const [handler, path] = resolvePath(resolveAssigns(data.path))
-    let channel: ?Channel = null
 
     if (from) {
       if (typeof handler !== 'function') {
         from.postMessage(errorReply('ENODEV', data))
       } else {
         if (data.type === 'OPEN') {
-          channel = from.openChannel()
+          const channel = from.openChannel()
           channel.handler = handler
           channel.path = path
           channel.send = function send (msg: Message) {
             global.console.warn('>>>>>>>>>>', msg) // FIXME: implement!
           }
           notifyNewChannel(from, channel.id, { path: data.path }, data)
-          handler(channel, from, data)
+          handler(channel, from, { ...data, path })
           return
         }
         // CLOSE is being handled in VFS, as it is delivered to this ^^^ _Channel_
 
-        handler(channel || path, from, data)
+        handler(path, from, data)
       }
     }
   }
 }
-
-export type Path = string
-export type Volume = string
 
 /**
  * Checks if volume name is valid.
@@ -176,7 +184,7 @@ export function mount (volume: Volume, handler: Path | Handler, argv: Array<mixe
     )
     switch (typeof handler) {
       case 'function':
-        mounts.set(volume, function fn (to: Pid | Channel, from: Process, msg: Message) {
+        mounts.set(volume, function fn (to: Path | Channel, from: Process, msg: Message) {
           // process in next "tick", to make it similar to process handler type
           // and break deep/cyclic stack trace
           setTimeout(() => ((handler: any): Handler).call(this, to, from, msg), 0)
@@ -185,7 +193,7 @@ export function mount (volume: Volume, handler: Path | Handler, argv: Array<mixe
       case 'string':
         mounts.set(
           volume,
-          function prc (to: Pid | Channel, from: Process, msg: Message) {
+          function prc (to: Path | Channel, from: Process, msg: Message) {
             const proc = this.pid && getProcess(this.pid)
             if (proc) {
               const message: Message = {
@@ -196,7 +204,22 @@ export function mount (volume: Volume, handler: Path | Handler, argv: Array<mixe
                 message.path = to
                 proc.postMessage(message)
               } else if (typeof to === 'object') {
-                message.channel = to.id
+                if (msg.type === 'OPEN' && typeof to.path === 'string' && to.path) {
+                  // FIXME: Refactor following to connectChannels() function used in IPC too.
+                  const chId = to.id
+                  const chPath = to.path
+                  const chan = proc.openChannel()
+                  chan.pid = from.pid
+                  chan.endpoint = chId
+                  to.pid = proc.pid
+                  to.endpoint = chan.id
+                  notifyNewChannel(proc, chan.id, { process: from.pid, path: chPath }, msg)
+                  // eslint-disable-next-line max-len
+                  chan.onTerminate = () => notifyNewChannel(from, chId, { process: null }, msg)
+                  return
+                }
+
+                message.channel = to.endpoint
                 proc.postMessage(message)
               } else {
                 from.postMessage(errorReply('EINVAL', msg))

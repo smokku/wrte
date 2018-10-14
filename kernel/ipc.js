@@ -1,9 +1,10 @@
 // @flow
 import type { Process, Pid } from './proc'
+import type { Handler } from './vfs'
 
 import { getProcess, getProcessForWindow } from './proc'
 
-export type MessageType = 'INIT' | 'ERROR' | 'DATA' | 'CHANNEL' | 'EVENT'
+export type MessageType = 'INIT' | 'ERROR' | 'DATA' | 'OPEN' | 'CHANNEL' | 'EVENT'
 
 export type Message = {
   type: MessageType,
@@ -92,24 +93,16 @@ export type Channel = {
 }
 
 /**
- * Handler function
- * @arg to - _Path_ or _Channel_ the _message_ belongs to.
- * @arg from - _Process_ sending the _message_.
- * @arg msg - _Message_ object.
- */
-export type Handler = (to: Pid | Channel, from: Process, msg: Message) => void
-
-/**
  * Helper function to notify a _Process_ about new _Channel_ creation.
  *
  * @param process - _Process_ object instance.
- * @param chanId - _Channel_ ID.
+ * @param channel - _Channel_ ID.
  * @param data - _Channel_ data (process: _Pid_ or path: _Path_).
  * @param message - OPEN _Message_ it is a reply to.
  */
 export function notifyNewChannel (
   process: Process,
-  chanId: Cid,
+  channel: Cid,
   data: { [string]: string | null },
   message: Message
 ): void {
@@ -119,7 +112,7 @@ export function notifyNewChannel (
         {
           ...data,
           type: 'CHANNEL',
-          channel: chanId,
+          channel,
         },
         message
       )
@@ -144,10 +137,11 @@ function messageHandler (evt) {
     evt.isTrusted &&
     evt.origin === 'null' &&
     typeof evt.data.type === 'string' &&
+    evt.data.type &&
     (typeof evt.data.process === 'string' || typeof evt.data.channel === 'string') &&
     evt.data.path == null
   ) {
-    // console.log('IPC', evt)
+    // console.debug('IPC', evt)
     const { source, data } = evt
     const from = getProcessForWindow(source)
 
