@@ -13,7 +13,7 @@ export default function (origin: string, name: string, path: string): void {
   window.onmessage = (msg) => {
     if (msg.isTrusted && msg.origin === origin && typeof msg.data === 'object') {
       const { data } = msg
-      if (data.type === 'DATA' && data.id === 'source') {
+      if (data.type === 'DATA' && data.id === name) {
         const blob = new window.Blob([data.payload], {
           type: 'application/javascript',
         })
@@ -62,11 +62,7 @@ export default function (origin: string, name: string, path: string): void {
           }
         }
         window.parent.postMessage('CREATED', origin)
-      } else if (
-        data.type === 'ERROR' &&
-        typeof data.payload === 'object' &&
-        data.id === 'source'
-      ) {
+      } else if (data.type === 'ERROR' && typeof data.payload === 'object' && data.id === name) {
         throw new Error(`Failed loading ${path}: ${data.payload.type}`)
       } else {
         window.msgQueue.push(msg)
@@ -80,5 +76,5 @@ export default function (origin: string, name: string, path: string): void {
     )
     return true
   }
-  window.parent.postMessage({ type: 'READ', path, id: 'source' }, origin)
+  window.parent.postMessage({ type: 'READ', path, id: name }, origin)
 }
