@@ -4,7 +4,7 @@ import type { Handler } from './vfs'
 
 import { getProcess, getProcessForWindow } from './proc'
 
-export type MessageType = 'INIT' | 'ERROR' | 'DATA' | 'OPEN' | 'CHANNEL' | 'EVENT'
+export type MessageType = 'INIT' | 'ERROR' | 'READ' | 'DATA' | 'OPEN' | 'CLOSE' | 'CHANNEL' | 'EVENT'
 
 export type Message = {
   type: MessageType,

@@ -1,4 +1,4 @@
-// @flow strict
+// @flow
 /* eslint-disable unicorn/prefer-add-event-listener */
 
 /**
@@ -28,7 +28,7 @@ global.onmessage = (evt) => {
   if (type === 'INIT' && !init) {
     ({
       argv: [dest],
-    } = init = payload) //  eslint-disable-line no-multi-assign
+    } = init = (payload: any)) //  eslint-disable-line no-multi-assign
     global.console.log(`[test/channel] started ${dest}`)
     if (dest) {
       global.postMessage({
