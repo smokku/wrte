@@ -37,5 +37,6 @@ export default function main () {
     }
   }
 
+  // spawn(`${window.location.origin}/current/test/file.js`)
   spawn(`${window.location.origin}/current/cmd/rc.js`)
 }

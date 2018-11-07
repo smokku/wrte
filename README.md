@@ -10,7 +10,7 @@ WRTE is a microkernel-like environment to run untrusted applications in your bro
 
 Try it live at http://wrte.cloud/
 
-![WRTE boot sequence](https://i.imgur.com/tbC96g1.png)
+![WRTE boot sequence](https://i.imgur.com/GJc5AZB.png)
 
 ## Kernel
 
