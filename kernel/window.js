@@ -16,6 +16,10 @@ export type Rect = {
 export default class Window extends EventEmitter {
   _frame: HTMLIFrameElement
 
+  _head: HTMLHeadElement
+
+  _style: HTMLStyleElement
+
   _body: HTMLElement
 
   _content: HTMLElement
@@ -53,6 +57,11 @@ export default class Window extends EventEmitter {
       parent.appendChild(this._frame)
 
       if (!this._body) {
+        this._head = this._frame.contentWindow.document.head
+        this._style = this._frame.contentWindow.document.createElement('style')
+        this._style.type = 'text/css'
+        this._head.appendChild(this._style)
+
         this._body = this._frame.contentWindow.document.body
         this._body.style.margin = '0'
         this._body.style.padding = '0'
@@ -64,8 +73,8 @@ export default class Window extends EventEmitter {
         this._content.style.overflow = 'auto'
         this._content.style.border = 'none'
         this._content.style.outline = 'none'
-        this._body.addEventListener('keypress', this.onKeyPress.bind(this))
-        this._body.addEventListener('focus', () => this._frame.focus())
+        this._content.addEventListener('keypress', this.onKeyPress.bind(this))
+        this._content.addEventListener('focus', () => { this._frame.focus(); this._content.focus() })
         this._body.appendChild(this._content)
       }
     }
@@ -86,6 +95,18 @@ export default class Window extends EventEmitter {
     if (position.y != null) this._frame.style.top = `${position.y}px`
     if (position.width != null) this._frame.style.width = `${position.width}px`
     if (position.height != null) this._frame.style.height = `${position.height}px`
+  }
+
+  setContent (data: string) {
+    if (typeof data === 'string') {
+      this._content.innerText = data
+    }
+  }
+
+  setStyle (data: string) {
+    if (typeof data === 'string') {
+      this._style.innerText = data
+    }
   }
 
   dragStart (evt: DragEvent) {

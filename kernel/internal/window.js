@@ -24,7 +24,7 @@ export function init () {
  * @param msg - _Message_ to be handled.
  */
 export function handler (to: Channel, from: Process, msg: Message): void {
-  window.console.debug('[window:]', msg.type, this.argv, to, from.pid, msg)
+  // window.console.debug('[window:]', msg.type, this.argv, to, from.pid, msg)
   if (typeof to === 'object') {
     const channel: Channel = to
     const { type, payload } = msg || {}
@@ -76,6 +76,20 @@ export function handler (to: Channel, from: Process, msg: Message): void {
         }
         if (win instanceof Window) {
           win.close()
+        }
+        break
+      case 'DATA':
+        if (channel.meta) {
+          win = channel.meta.window
+        }
+        if (win instanceof Window) {
+          if (typeof payload === 'string') {
+            win.setContent(payload)
+          } else if (typeof payload === 'object') {
+            if (typeof payload.style === 'string') {
+              win.setStyle(payload.style)
+            }
+          }
         }
         break
       default:
