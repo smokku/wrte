@@ -41,12 +41,13 @@ const entries = {
     name: 'wrte',
   },
   'cmd/logger.js': 'dist/current/cmd/logger.js',
-  // "cmd/rc.js": "dist/current/cmd/rc.js",
+  'cmd/rc.js': 'dist/current/cmd/rc.js',
   // "cmd/cat.js": "dist/current/cmd/cat.js",
 }
 if (!production) {
   entries['test/channel.js'] = 'dist/current/test/channel.js'
   entries['test/window.js'] = 'dist/current/test/window.js'
+  entries['test/file.js'] = 'dist/current/test/file.js'
 }
 
 export default Object.entries(entries).reduce(
