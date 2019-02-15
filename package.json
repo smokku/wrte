@@ -7,7 +7,7 @@
   "author": "Tomasz Sterna <smoku@xiaoka.com>",
   "license": "AGPL-3.0",
   "devDependencies": {
-    "@babel/core": "7.2.0",
+    "@babel/core": "7.3.3",
     "@babel/plugin-syntax-object-rest-spread": "7.2.0",
     "@babel/preset-flow": "7.0.0",
     "babel-eslint": "10.0.1",
