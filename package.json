@@ -12,7 +12,7 @@
     "@babel/preset-flow": "7.0.0",
     "babel-eslint": "10.0.1",
     "babel-plugin-discard-module-references": "1.1.2",
-    "babel-plugin-istanbul": "5.1.1",
+    "babel-plugin-istanbul": "5.1.4",
     "cors": "2.8.5",
     "documentation": "9.3.1",
     "eslint": "5.15.1",
