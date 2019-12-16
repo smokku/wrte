@@ -42,7 +42,7 @@
     "rollup-plugin-root-import": "0.2.4",
     "tap-junit": "2.1.0",
     "tap-spec": "5.0.0",
-    "tape": "4.11.0"
+    "tape": "4.12.0"
   },
   "dependencies": {
     "tape-rollup": "4.6.4"
