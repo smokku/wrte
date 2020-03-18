@@ -40,7 +40,7 @@
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-replace": "2.2.0",
     "rollup-plugin-root-import": "1.0.0",
-    "tap-junit": "2.1.0",
+    "tap-junit": "3.1.0",
     "tap-spec": "5.0.0",
     "tape": "4.13.2"
   },
