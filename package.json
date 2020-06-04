@@ -28,7 +28,7 @@
     "eslint-plugin-tape": "1.1.0",
     "eslint-plugin-unicorn": "6.0.1",
     "flow-bin": "0.87.0",
-    "fs-extra": "9.0.0",
+    "fs-extra": "9.0.1",
     "git-rev-sync": "2.0.0",
     "live-server": "1.2.1",
     "nodemon": "2.0.4",
