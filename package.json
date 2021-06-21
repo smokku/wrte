@@ -36,7 +36,7 @@
     "nyc": "15.1.0",
     "puppeteer-core": "3.3.0",
     "puppeteer-to-istanbul": "1.4.0",
-    "rollup": "2.52.1",
+    "rollup": "2.52.2",
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-replace": "2.2.0",
     "rollup-plugin-root-import": "1.0.0",
