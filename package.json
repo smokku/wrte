@@ -27,7 +27,7 @@
     "eslint-plugin-standard": "4.1.0",
     "eslint-plugin-tape": "1.1.0",
     "eslint-plugin-unicorn": "6.0.1",
-    "flow-bin": "0.87.0",
+    "flow-bin": "0.154.0",
     "fs-extra": "9.1.0",
     "git-rev-sync": "2.1.0",
     "live-server": "1.2.1",
